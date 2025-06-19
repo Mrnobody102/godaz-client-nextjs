@@ -2,9 +2,10 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import '@/assets/styles/globals.css';
 import { APP_DESCRIPTION, APP_NAME } from '@/lib/constants';
-import { QueryClientProvider } from '@tanstack/react-query';
-import queryClient from '@/lib/queryClient';
-import { ToastContainer } from 'react-toastify';
+import './globals.css';
+import ClientQueryProvider from '@/components/query-client-provider';
+import { ThemeProvider } from 'next-themes';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,12 +23,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter} antialiased`}>
-        <QueryClientProvider client={queryClient}>
-          {children}
-          <ToastContainer position="top-right" autoClose={3000} />
-        </QueryClientProvider>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter} antialiased`} suppressHydrationWarning>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ClientQueryProvider>{children}</ClientQueryProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
