@@ -6,7 +6,7 @@ import CartIcon from './cart-icon';
 
 const Header = () => {
   return (
-    <header className="w-full flex flex-col border-b">
+    <header className="w-full flex flex-col">
       <div className="flex p-4 bg-background">
         <div className="flex-2">
           <LogoTitle />
