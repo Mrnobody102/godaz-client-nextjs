@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTranslations } from 'next-intl';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function AuthModal({
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  const t = useTranslations('auth');
   const { login, register } = useAuth();
 
   const resetForm = () => {
@@ -50,22 +52,22 @@ export function AuthModal({
         if (success) {
           handleClose();
         } else {
-          setError('Email hoặc mật khẩu không đúng');
+          setError(t('errors.invalid_credentials'));
         }
       } else {
         // Validate registration
         if (!name.trim()) {
-          setError('Vui lòng nhập họ tên');
+          setError(t('errors.required_name'));
           setIsLoading(false);
           return;
         }
         if (password.length < 6) {
-          setError('Mật khẩu phải có ít nhất 6 ký tự');
+          setError(t('errors.password_too_short'));
           setIsLoading(false);
           return;
         }
         if (password !== confirmPassword) {
-          setError('Mật khẩu xác nhận không khớp');
+          setError(t('errors.password_mismatch'));
           setIsLoading(false);
           return;
         }
@@ -74,11 +76,11 @@ export function AuthModal({
         if (success) {
           handleClose();
         } else {
-          setError('Email này đã được đăng ký');
+          setError(t('errors.email_taken'));
         }
       }
-    } catch (err) {
-      setError('Có lỗi xảy ra, vui lòng thử lại');
+    } catch {
+      setError(t('errors.generic'));
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +103,7 @@ export function AuthModal({
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white rounded-lg shadow-xl z-50 p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl text-gray-900">
-            {mode === 'login' ? 'Đăng Nhập' : 'Đăng Ký'}
+            {mode === 'login' ? t('login') : t('register')}
           </h2>
           <button
             onClick={handleClose}
@@ -125,7 +127,7 @@ export function AuthModal({
                 htmlFor="name"
                 className="block text-sm mb-2 text-gray-700"
               >
-                Họ và Tên
+                {t('labels.name')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -135,7 +137,7 @@ export function AuthModal({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-900 focus:border-transparent"
-                  placeholder="Nguyễn Văn A"
+                  placeholder={t('placeholders.name')}
                   required
                 />
               </div>
@@ -144,7 +146,7 @@ export function AuthModal({
 
           <div>
             <label htmlFor="email" className="block text-sm mb-2 text-gray-700">
-              Email
+              {t('labels.email')}
             </label>
             <div className="relative">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -154,7 +156,7 @@ export function AuthModal({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-900 focus:border-transparent"
-                placeholder="email@example.com"
+                placeholder={t('placeholders.email')}
                 required
               />
             </div>
@@ -165,7 +167,7 @@ export function AuthModal({
               htmlFor="password"
               className="block text-sm mb-2 text-gray-700"
             >
-              Mật khẩu
+              {t('labels.password')}
             </label>
             <div className="relative">
               <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -175,7 +177,7 @@ export function AuthModal({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-900 focus:border-transparent"
-                placeholder="••••••••"
+                placeholder={t('placeholders.password')}
                 required
               />
             </div>
@@ -187,7 +189,7 @@ export function AuthModal({
                 htmlFor="confirmPassword"
                 className="block text-sm mb-2 text-gray-700"
               >
-                Xác nhận mật khẩu
+                {t('labels.confirm_password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -197,7 +199,7 @@ export function AuthModal({
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-900 focus:border-transparent"
-                  placeholder="••••••••"
+                  placeholder={t('placeholders.password')}
                   required
                 />
               </div>
@@ -210,21 +212,25 @@ export function AuthModal({
             className="w-full bg-amber-900 hover:bg-amber-800 text-white py-3 rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading
-              ? 'Đang xử lý...'
+              ? t('processing')
               : mode === 'login'
-                ? 'Đăng Nhập'
-                : 'Đăng Ký'}
+                ? t('login')
+                : t('register')}
           </button>
         </form>
 
         <div className="mt-6 text-center">
           <p className="text-gray-600">
-            {mode === 'login' ? 'Chưa có tài khoản?' : 'Đã có tài khoản?'}{' '}
+            {mode === 'login'
+              ? t('actions.prompt_no_account')
+              : t('actions.prompt_have_account')}{' '}
             <button
               onClick={switchMode}
               className="text-amber-900 hover:text-amber-800 transition"
             >
-              {mode === 'login' ? 'Đăng ký ngay' : 'Đăng nhập'}
+              {mode === 'login'
+                ? t('actions.signup_now')
+                : t('actions.login_now')}
             </button>
           </p>
         </div>

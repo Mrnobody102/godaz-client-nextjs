@@ -1,8 +1,38 @@
 'use client';
 
-import { ShoppingCart, Menu, X, User, LogOut } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  useTranslations as useNextIntlTranslations,
+  useLocale,
+} from 'next-intl';
+import { usePathname, useRouter } from 'next/navigation';
+
+function useSafeTranslations(ns: string) {
+  try {
+    return useNextIntlTranslations(ns);
+  } catch {
+    // Fallback translator when provider is not available (during dev or redirect)
+    const fallbackMap: Record<string, string> = {
+      'header.title': 'Thủ Công Mỹ Nghệ',
+      'header.nav.home': 'Trang Chủ',
+      'header.nav.products': 'Sản Phẩm',
+      'header.nav.about': 'Giới Thiệu',
+      'header.nav.contact': 'Liên Hệ',
+      'header.signin': 'Đăng Nhập',
+      'header.logout': 'Đăng Xuất',
+    };
+
+    return (key: string, opts?: Record<string, unknown>) => {
+      const full = `${ns}.${key}`;
+      const msg = fallbackMap[full];
+      if (!msg) return key;
+      if (!opts) return msg;
+      return msg.replace(/{(\w+)}/g, (_, k) => String(opts[k] ?? ''));
+    };
+  }
+}
 
 interface HeaderProps {
   cartCount: number;
@@ -13,11 +43,22 @@ interface HeaderProps {
 export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [langMenuOpen, setLangMenuOpen] = useState(false);
   const { user, logout } = useAuth();
+  const t = useSafeTranslations('header');
+  const locale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const handleLogout = () => {
     logout();
     setUserMenuOpen(false);
+  };
+
+  const handleLanguageChange = (newLocale: string) => {
+    const currentPath = pathname.replace(`/${locale}`, '');
+    router.push(`/${newLocale}${currentPath || ''}`);
+    setLangMenuOpen(false);
   };
 
   return (
@@ -25,25 +66,39 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
           <div className="flex items-center space-x-2">
-            <div className="w-10 h-10 bg-amber-900 rounded-lg flex items-center justify-center text-white">
+            <div className="w-10 h-10 bg-amber-900 rounded-lg flex items-center justify-center text-white font-bold">
               TM
             </div>
-            <span className="text-amber-900">Thủ Công Mỹ Nghệ</span>
+            <span className="text-xl font-bold text-amber-900">
+              {t('title')}
+            </span>
           </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a href="#home" className="text-gray-700 hover:text-amber-900 transition">
-              Trang Chủ
+            <a
+              href="#home"
+              className="text-gray-700 hover:text-amber-900 transition"
+            >
+              {t('nav.home')}
             </a>
-            <a href="#products" className="text-gray-700 hover:text-amber-900 transition">
-              Sản Phẩm
+            <a
+              href="#products"
+              className="text-gray-700 hover:text-amber-900 transition"
+            >
+              {t('nav.products')}
             </a>
-            <a href="#about" className="text-gray-700 hover:text-amber-900 transition">
-              Giới Thiệu
+            <a
+              href="#about"
+              className="text-gray-700 hover:text-amber-900 transition"
+            >
+              {t('nav.about')}
             </a>
-            <a href="#contact" className="text-gray-700 hover:text-amber-900 transition">
-              Liên Hệ
+            <a
+              href="#contact"
+              className="text-gray-700 hover:text-amber-900 transition"
+            >
+              {t('nav.contact')}
             </a>
           </nav>
 
@@ -58,7 +113,9 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                   <div className="w-8 h-8 bg-amber-900 rounded-full flex items-center justify-center text-white text-sm">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span className="hidden md:inline text-gray-700">{user.name}</span>
+                  <span className="hidden md:inline text-gray-700">
+                    {user.name}
+                  </span>
                 </button>
 
                 {userMenuOpen && (
@@ -77,7 +134,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                         className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                       >
                         <LogOut className="w-4 h-4" />
-                        Đăng Xuất
+                        {t('logout')}
                       </button>
                     </div>
                   </>
@@ -89,9 +146,53 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                 className="hidden md:flex items-center gap-2 px-4 py-2 text-amber-900 hover:bg-amber-50 rounded-lg transition"
               >
                 <User className="w-5 h-5" />
-                <span>Đăng Nhập</span>
+                <span>{t('signin')}</span>
               </button>
             )}
+
+            {/* Language Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setLangMenuOpen(!langMenuOpen)}
+                className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition"
+              >
+                <Globe className="w-5 h-5 text-gray-700" />
+                <span className="hidden sm:inline text-gray-700 uppercase">
+                  {locale}
+                </span>
+              </button>
+
+              {langMenuOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-10"
+                    onClick={() => setLangMenuOpen(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-20">
+                    <button
+                      onClick={() => handleLanguageChange('vi')}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition ${
+                        locale === 'vi'
+                          ? 'bg-amber-50 text-amber-900 font-semibold'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      Tiếng Việt
+                    </button>
+                    <button
+                      onClick={() => handleLanguageChange('en')}
+                      className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition ${
+                        locale === 'en'
+                          ? 'bg-amber-50 text-amber-900 font-semibold'
+                          : 'text-gray-700'
+                      }`}
+                    >
+                      English
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
 
             <button
               onClick={onCartClick}
@@ -127,28 +228,28 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Trang Chủ
+              {t('nav.home')}
             </a>
             <a
               href="#products"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Sản Phẩm
+              {t('nav.products')}
             </a>
             <a
               href="#about"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Giới Thiệu
+              {t('nav.about')}
             </a>
             <a
               href="#contact"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
-              Liên Hệ
+              {t('nav.contact')}
             </a>
             {!user && (
               <button
@@ -159,7 +260,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                 className="w-full text-left py-2 text-amber-900 hover:text-amber-800 transition flex items-center gap-2"
               >
                 <User className="w-5 h-5" />
-                Đăng Nhập
+                {t('signin')}
               </button>
             )}
           </nav>

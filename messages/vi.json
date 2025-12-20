@@ -1,0 +1,130 @@
+{
+  "header": {
+    "title": "Thủ Công Mỹ Nghệ Việt Nam",
+    "cart": "Giỏ hàng",
+    "signin": "Đăng nhập",
+    "logout": "Đăng Xuất",
+    "nav": {
+      "home": "Trang Chủ",
+      "products": "Sản Phẩm",
+      "about": "Giới Thiệu",
+      "contact": "Liên Hệ"
+    }
+  },
+  "hero": {
+    "title": "Thủ Công Mỹ Nghệ Việt Nam",
+    "subtitle": "Khám phá vẻ đẹp truyền thống qua những sản phẩm thủ công tinh xảo",
+    "cta": "Khám Phá Ngay",
+    "ctas": {
+      "view_products": "Xem Sản Phẩm",
+      "contact": "Liên Hệ"
+    }
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "register": "Đăng ký",
+    "processing": "Đang xử lý...",
+    "labels": {
+      "name": "Họ và tên",
+      "email": "Email",
+      "password": "Mật khẩu",
+      "confirm_password": "Xác nhận mật khẩu"
+    },
+    "placeholders": {
+      "name": "Nguyễn Văn A",
+      "email": "email@example.com",
+      "password": "••••••••"
+    },
+    "actions": {
+      "forgot_password": "Quên mật khẩu?",
+      "signup_now": "Đăng ký ngay",
+      "login_now": "Đăng nhập",
+      "switch_to_register": "Tạo tài khoản",
+      "switch_to_login": "Đăng nhập",
+      "prompt_no_account": "Chưa có tài khoản?",
+      "prompt_have_account": "Đã có tài khoản?"
+    }
+  },
+  "product": {
+    "add": "Thêm",
+    "price_per": "{price}₫ /{unit}"
+  },
+  "home": {
+    "products": {
+      "title": "Sản Phẩm Thủ Công Mỹ Nghệ",
+      "description": "Những sản phẩm thủ công tinh xảo được làm bằng tay từ nghệ nhân lành nghề"
+    },
+    "features": {
+      "f1_title": "100% Thủ Công",
+      "f1_desc": "Sản phẩm được làm hoàn toàn bằng tay bởi nghệ nhân lành nghề",
+      "f2_title": "Độc Đáo",
+      "f2_desc": "Mỗi sản phẩm đều có nét riêng, mang đậm dấu ấn văn hóa Việt",
+      "f3_title": "Thân Thiện Môi Trường",
+      "f3_desc": "Sử dụng nguyên liệu tự nhiên, an toàn và bền vững"
+    },
+    "about": {
+      "title": "Về Chúng Tôi",
+      "p1": "Chúng tôi là đơn vị chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống Việt Nam.",
+      "p2": "Với đội ngũ nghệ nhân tâm huyết, chúng tôi cam kết mang đến những sản phẩm chất lượng cao, bền đẹp và đậm chất văn hóa dân tộc."
+    }
+  },
+  "footer": {
+    "company": "Thủ Công Mỹ Nghệ",
+    "description": "Chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống, làm thủ công 100%.",
+    "about": {
+      "title": "Về Chúng Tôi",
+      "links": {
+        "intro": "Giới Thiệu",
+        "services": "Dịch Vụ",
+        "policies": "Chính Sách",
+        "partners": "Đối Tác"
+      }
+    },
+    "contact": {
+      "title": "Liên Hệ",
+      "phone": "0123 456 789",
+      "email": "contact@thucongmynghe.vn",
+      "address": "123 Đường ABC, Quận XYZ, TP.HCM"
+    },
+    "copyright": "© {year} {company}. All rights reserved."
+  },
+  "ui": {
+    "command": {
+      "title": "Bảng lệnh",
+      "description": "Tìm kiếm lệnh để thực hiện...",
+      "empty": "Không có kết quả"
+    },
+    "image": {
+      "error_alt": "Lỗi tải ảnh"
+    }
+  },
+  "errors": {
+    "validation": {
+      "name_min": "Tên phải có ít nhất 3 ký tự",
+      "slug_min": "Slug phải có ít nhất 3 ký tự",
+      "category_min": "Thể loại phải có ít nhất 3 ký tự",
+      "brand_min": "Thương hiệu phải có ít nhất 3 ký tự",
+      "description_min": "Mô tả phải có ít nhất 3 ký tự",
+      "images_min": "Sản phẩm phải có ít nhất một hình ảnh",
+      "item_id_required": "ID mục là bắt buộc",
+      "item_name_required": "Tên mục là bắt buộc",
+      "invalid_image_url": "URL hình ảnh không hợp lệ",
+      "item_slug_required": "Slug mục là bắt buộc",
+      "price_positive": "Giá phải là số dương",
+      "quantity_non_negative": "Số lượng phải lớn hơn hoặc bằng 0",
+      "currency_format": "Phải là giá trị tiền tệ hợp lệ (ví dụ 1234.56)",
+      "session_cart_required": "Session cart ID là bắt buộc",
+      "invalid_email": "Địa chỉ email không hợp lệ",
+      "email_min": "Email phải có ít nhất 3 ký tự",
+      "password_min": "Mật khẩu phải có ít nhất 3 ký tự"
+    }
+  },
+  "cart": {
+    "title": "Giỏ Hàng",
+    "empty": "Giỏ hàng của bạn đang trống",
+    "item_price_per": "{price}₫ /{unit}",
+    "remove": "Xóa",
+    "total": "Tổng cộng:",
+    "checkout": "Đặt Hàng"
+  }
+}

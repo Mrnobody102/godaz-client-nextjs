@@ -1,6 +1,12 @@
+'use client';
+
 import { Mail, Phone, MapPin } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 export function Footer() {
+  const t = useTranslations('footer');
+  const year = new Date().getFullYear();
+
   return (
     <footer className="bg-gray-900 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -10,62 +16,60 @@ export function Footer() {
               <div className="w-10 h-10 bg-amber-900 rounded-lg flex items-center justify-center">
                 TM
               </div>
-              <span>Thủ Công Mỹ Nghệ</span>
+              <span>{t('company')}</span>
             </div>
-            <p className="text-gray-400">
-              Chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống, làm thủ công 100%.
-            </p>
+            <p className="text-gray-400">{t('description')}</p>
           </div>
 
           <div id="about">
-            <h3 className="mb-4">Về Chúng Tôi</h3>
+            <h3 className="mb-4">{t('about.title')}</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
                 <a href="#" className="hover:text-white transition">
-                  Giới Thiệu
+                  {t('about.links.intro')}
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition">
-                  Dịch Vụ
+                  {t('about.links.services')}
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition">
-                  Chính Sách
+                  {t('about.links.policies')}
                 </a>
               </li>
               <li>
                 <a href="#" className="hover:text-white transition">
-                  Đối Tác
+                  {t('about.links.partners')}
                 </a>
               </li>
             </ul>
           </div>
 
           <div id="contact">
-            <h3 className="mb-4">Liên Hệ</h3>
+            <h3 className="mb-4">{t('contact.title')}</h3>
             <ul className="space-y-3 text-gray-400">
               <li className="flex items-center gap-2">
                 <Phone className="w-5 h-5" />
-                <span>0123 456 789</span>
+                <span>{t('contact.phone')}</span>
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="w-5 h-5" />
-                <span>contact@thucongmynghe.vn</span>
+                <span>{t('contact.email')}</span>
               </li>
               <li className="flex items-center gap-2">
                 <MapPin className="w-5 h-5" />
-                <span>123 Đường ABC, Quận XYZ, TP.HCM</span>
+                <span>{t('contact.address')}</span>
               </li>
             </ul>
           </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-          <p>&copy; 2025 Thủ Công Mỹ Nghệ. All rights reserved.</p>
+          <p>{t('copyright', { year, company: t('company') })}</p>
         </div>
       </div>
     </footer>
   );
-}
+} 

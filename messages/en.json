@@ -1,0 +1,139 @@
+{
+  "header": {
+    "title": "Vietnamese Handicrafts",
+    "cart": "Cart",
+    "signin": "Sign in",
+    "logout": "Sign out",
+    "nav": {
+      "home": "Home",
+      "products": "Products",
+      "about": "About",
+      "contact": "Contact"
+    }
+  },
+  "product": {
+    "add": "Add",
+    "price_per": "{price} VND /{unit}"
+  },
+
+  "hero": {
+    "title": "Vietnamese Handicrafts",
+    "subtitle": "Handcrafted products rich in cultural tradition",
+    "ctas": {
+      "view_products": "View products",
+      "contact": "Contact us"
+    }
+  },
+  "auth": {
+    "login": "Sign in",
+    "register": "Sign up",
+    "processing": "Processing...",
+    "labels": {
+      "name": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "confirm_password": "Confirm password"
+    },
+    "placeholders": {
+      "name": "John Doe",
+      "email": "email@example.com",
+      "password": "••••••••"
+    },
+    "actions": {
+      "forgot_password": "Forgot your password?",
+      "signup_now": "Sign up now",
+      "login_now": "Sign in",
+      "switch_to_register": "Create an account",
+      "switch_to_login": "Sign in",
+      "prompt_no_account": "Don't have an account?",
+      "prompt_have_account": "Already have an account?"
+    },
+    "errors": {
+      "invalid_credentials": "Invalid email or password",
+      "required_name": "Please enter your full name",
+      "password_too_short": "Password must be at least 6 characters",
+      "password_mismatch": "Password confirmation does not match",
+      "email_taken": "This email is already registered",
+      "generic": "An error occurred, please try again"
+    },
+    "continue_with": "Or continue with"
+  },
+  "home": {
+    "products": {
+      "title": "Handcrafted Products",
+      "description": "Finely handcrafted goods made by skilled artisans"
+    },
+    "features": {
+      "f1_title": "100% Handmade",
+      "f1_desc": "Products crafted entirely by hand by skilled artisans",
+      "f2_title": "Unique",
+      "f2_desc": "Each product has its own character and cultural identity",
+      "f3_title": "Eco Friendly",
+      "f3_desc": "Made with natural, safe, and sustainable materials"
+    },
+    "about": {
+      "title": "About Us",
+      "p1": "We provide traditional Vietnamese handcrafted products.",
+      "p2": "With a passionate team of artisans, we ensure high-quality, durable, culturally-rich items."
+    }
+  },
+  "footer": {
+    "company": "Vietnamese Handicrafts",
+    "description": "We provide traditional handcrafted products, 100% handmade.",
+    "about": {
+      "title": "About",
+      "links": {
+        "intro": "Introduction",
+        "services": "Services",
+        "policies": "Policies",
+        "partners": "Partners"
+      }
+    },
+    "contact": {
+      "title": "Contact",
+      "phone": "0123 456 789",
+      "email": "contact@thucongmynghe.vn",
+      "address": "123 ABC St, XYZ District, HCMC"
+    },
+    "copyright": "© {year} {company}. All rights reserved."
+  },
+  "ui": {
+    "command": {
+      "title": "Command Palette",
+      "description": "Search for a command to run...",
+      "empty": "No results found"
+    },
+    "image": {
+      "error_alt": "Error loading image"
+    }
+  },
+  "errors": {
+    "validation": {
+      "name_min": "Name must be at least 3 characters",
+      "slug_min": "Slug must be at least 3 characters",
+      "category_min": "Category must be at least 3 characters",
+      "brand_min": "Brand must be at least 3 characters",
+      "description_min": "Description must be at least 3 characters",
+      "images_min": "Product must have at least one image",
+      "item_id_required": "Item ID is required",
+      "item_name_required": "Item name is required",
+      "invalid_image_url": "Invalid image URL",
+      "item_slug_required": "Item slug is required",
+      "price_positive": "Price must be positive",
+      "quantity_non_negative": "Quantity must be non-negative",
+      "currency_format": "Must be a valid currency amount (e.g. 1234.56)",
+      "session_cart_required": "Session cart ID is required",
+      "invalid_email": "Invalid email address",
+      "email_min": "Email must be at least 3 characters",
+      "password_min": "Password must be at least 3 characters"
+    }
+  },
+  "cart": {
+    "title": "Cart",
+    "empty": "Your cart is empty",
+    "item_price_per": "{price} VND /{unit}",
+    "remove": "Remove",
+    "total": "Total:",
+    "checkout": "Checkout"
+  }
+}
