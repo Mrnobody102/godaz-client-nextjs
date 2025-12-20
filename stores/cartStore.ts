@@ -1,18 +1,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { Product } from '@/components/ProductCard';
 
-interface CartItem {
-  id: string;
-  name: string;
-  image: string;
-  slug: string;
-  price: number;
+interface CartItem extends Product {
   quantity: number;
 }
 
 interface CartState {
   items: CartItem[];
-  addItem: (item: CartItem) => void;
+  addItem: (item: Product) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
   clearCart: () => void;
@@ -28,13 +24,11 @@ const useCartStore = create<CartState>()(
           if (existingItem) {
             return {
               items: state.items.map((i) =>
-                i.id === item.id
-                  ? { ...i, quantity: i.quantity + item.quantity }
-                  : i
+                i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
               ),
             };
           }
-          return { items: [...state.items, item] };
+          return { items: [...state.items, { ...item, quantity: 1 }] };
         }),
       removeItem: (id) =>
         set((state) => ({

@@ -4,23 +4,13 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
-import { ProductCard } from '@/components/ProductCard';
+import { ProductCard, Product } from '@/components/ProductCard';
 import { Cart } from '@/components/Cart';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
 
-type LocalProduct = {
-  id: string;
-  name: string;
-  category: string;
-  price: string;
-  unit: string;
-  image: string;
-  description: string;
-};
-
-const handicraftProducts: LocalProduct[] = [
+const handicraftProducts: Product[] = [
   {
     id: '1',
     name: 'Bình Gốm Sứ Bát Tràng',
@@ -116,15 +106,8 @@ export default function HomeClient() {
     removeItem,
   } = useCartStore();
 
-  const addToCart = (product: LocalProduct) => {
-    addItem({
-      id: product.id,
-      name: product.name,
-      image: product.image,
-      slug: product.id,
-      price: parseFloat(product.price),
-      quantity: 1,
-    });
+  const addToCart = (product: Product) => {
+    addItem(product);
   };
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
