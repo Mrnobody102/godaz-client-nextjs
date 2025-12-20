@@ -1,29 +1,23 @@
-import Header from '@/components/shared/header';
-import Footer from '@/components/footer';
+import type { Metadata } from 'next';
+import './globals.css';
+import { AuthProvider } from '@/contexts/AuthContext';
+
+export const metadata: Metadata = {
+  title: 'Thủ Công Mỹ Nghệ Việt Nam',
+  description:
+    'Chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống, làm thủ công 100%',
+};
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header full width border */}
-      <div className="w-full border-b">
-        <div className="max-w-screen-xl mx-auto px-4">
-          <Header />
-        </div>
-      </div>
-      {/* Main content */}
-      <div className="max-w-screen-xl mx-auto px-4 flex-1 w-full">
-        <main className="w-full">{children}</main>
-      </div>
-      {/* Footer full width border */}
-      <div className="w-full border-t">
-        <div className="max-w-screen-xl mx-auto px-4">
-          <Footer />
-        </div>
-      </div>
-    </div>
+    <html lang="vi">
+      <body>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
+    </html>
   );
 }

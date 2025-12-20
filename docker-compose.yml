@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  frontend:
+    build: .
+    ports:
+      - '3000:3000'
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8080 # Proxy đến BE
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      - backend # Link đến BE service (nếu run full từ infra repo)
+
+
+  # Nếu cần full stack, include BE services từ backend compose (hoặc dùng external_links)
