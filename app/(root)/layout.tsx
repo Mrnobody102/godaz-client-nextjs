@@ -3,7 +3,7 @@ import './globals.css';
 import { ReactNode } from 'react';
 
 export const metadata: Metadata = {
-  title: 'Thủ Công Mỹ Nghệ Việt Nam',
+  title: 'Trang chủ',
   description:
     'Chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống, làm thủ công 100%',
 };

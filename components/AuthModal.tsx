@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
@@ -26,6 +26,21 @@ export function AuthModal({
 
   const t = useTranslations('auth');
   const { login, register } = useAuth();
+  const previousTitleRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      if (!previousTitleRef.current) {
+        previousTitleRef.current = document.title;
+      }
+
+      const titlePrefix = mode === 'login' ? t('login') : t('register');
+      document.title = `${titlePrefix} | goDaz`;
+    } else if (previousTitleRef.current) {
+      document.title = previousTitleRef.current;
+      previousTitleRef.current = null;
+    }
+  }, [isOpen, mode, t]);
 
   const resetForm = () => {
     setName('');
