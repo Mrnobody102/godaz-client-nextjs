@@ -3,16 +3,8 @@
 import Image from 'next/image';
 import { Plus } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
-
-export interface Product {
-  id: string | number;
-  name: string;
-  category: string;
-  price: string | number;
-  unit: string;
-  image: string;
-  description: string;
-}
+import { Link } from '@/i18n/routing';
+import { Product } from '@/lib/constants/products';
 
 interface ProductCardProps {
   product: Product;
@@ -32,26 +24,28 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   }).format(priceNum);
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow">
-      <div className="relative h-64 w-full">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col">
+      <Link href={`/product/${product.id}`} className="relative h-64 w-full block">
         <Image
           src={product.image}
           alt={product.name}
           fill
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          className="object-cover"
+          className="object-cover hover:scale-105 transition-transform duration-300"
         />
         <div className="absolute top-4 right-4">
           <span className="bg-amber-900 text-white px-3 py-1 rounded-full text-sm">
             {product.category}
           </span>
         </div>
-      </div>
+      </Link>
 
-      <div className="p-6">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">
-          {product.name}
-        </h3>
+      <div className="p-6 flex flex-col flex-1">
+        <Link href={`/product/${product.id}`}>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2 hover:text-amber-900 transition-colors">
+            {product.name}
+          </h3>
+        </Link>
         <p className="text-gray-600 text-sm mb-4">{product.description}</p>
 
         <div className="flex items-center justify-between">

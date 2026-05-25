@@ -126,5 +126,13 @@
     "remove": "Xóa",
     "total": "Tổng cộng:",
     "checkout": "Đặt Hàng"
+  },
+  "productDetail": {
+    "backToHome": "Quay lại Trang chủ",
+    "addToCart": "Thêm vào giỏ hàng",
+    "category": "Danh mục:",
+    "description": "Mô tả sản phẩm",
+    "notFound": "Không tìm thấy sản phẩm",
+    "price_per": "{price}₫ /{unit}"
   }
 }

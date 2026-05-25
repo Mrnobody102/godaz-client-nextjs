@@ -135,5 +135,13 @@
     "remove": "Remove",
     "total": "Total:",
     "checkout": "Checkout"
+  },
+  "productDetail": {
+    "backToHome": "Back to Home",
+    "addToCart": "Add to Cart",
+    "category": "Category:",
+    "description": "Description",
+    "notFound": "Product not found",
+    "price_per": "{price} VND /{unit}"
   }
 }
