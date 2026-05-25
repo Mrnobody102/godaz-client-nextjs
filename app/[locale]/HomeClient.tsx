@@ -33,6 +33,7 @@ export default function HomeClient() {
 
   const addToCart = (product: Product) => {
     addItem(product);
+    setIsCartOpen(true);
   };
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {

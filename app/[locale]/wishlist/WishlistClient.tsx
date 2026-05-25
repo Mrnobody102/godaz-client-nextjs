@@ -61,7 +61,10 @@ export default function WishlistClient() {
               <ProductCard
                 key={product.id}
                 product={product}
-                onAddToCart={(p) => addCartItem(p)}
+                onAddToCart={(p) => {
+                  addCartItem(p);
+                  setIsCartOpen(true);
+                }}
               />
             ))}
           </div>

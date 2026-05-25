@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
-import { ArrowLeft, ShoppingBag, Heart } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Heart, Minus, Plus, Truck, ShieldCheck, Sparkles } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Cart } from '@/components/Cart';
@@ -25,6 +25,7 @@ export default function ProductDetailClient({ product }: Props) {
   const locale = useLocale();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [quantity, setQuantity] = useState(1);
 
   const { items: cartItems, addItem: addCartItem, updateQuantity, removeItem } = useCartStore();
   const { isInWishlist, addItem: addWishlistItem, removeItem: removeWishlistItem } = useWishlistStore();
@@ -42,8 +43,17 @@ export default function ProductDetailClient({ product }: Props) {
   };
 
   const handleAddToCart = () => {
-    addCartItem(product);
+    addCartItem(product, quantity);
+    setIsCartOpen(true);
     toast.success(product.name + ' ✓');
+  };
+
+  const handleDecreaseQuantity = () => {
+    if (quantity > 1) setQuantity(q => q - 1);
+  };
+
+  const handleIncreaseQuantity = () => {
+    setQuantity(q => q + 1);
   };
 
   const relatedProducts = handicraftProducts
@@ -85,7 +95,7 @@ export default function ProductDetailClient({ product }: Props) {
               src={product.image}
               alt={product.name}
               fill
-              className="object-cover"
+              className="object-cover transition-transform duration-500 hover:scale-105"
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
             />
@@ -113,7 +123,23 @@ export default function ProductDetailClient({ product }: Props) {
               </p>
             </div>
             
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+              <div className="flex items-center justify-between border-2 border-gray-200 rounded-2xl p-2 w-full sm:w-32 bg-white">
+                <button
+                  onClick={handleDecreaseQuantity}
+                  className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-amber-900 transition-colors"
+                >
+                  <Minus className="w-5 h-5" />
+                </button>
+                <span className="font-bold text-gray-900 text-lg w-8 text-center">{quantity}</span>
+                <button
+                  onClick={handleIncreaseQuantity}
+                  className="w-10 h-10 flex items-center justify-center text-gray-500 hover:text-amber-900 transition-colors"
+                >
+                  <Plus className="w-5 h-5" />
+                </button>
+              </div>
+
               <button
                 onClick={handleAddToCart}
                 className="flex-1 bg-amber-900 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-lg"
@@ -124,14 +150,29 @@ export default function ProductDetailClient({ product }: Props) {
               
               <button
                 onClick={handleWishlistClick}
-                className={`w-16 h-16 flex items-center justify-center rounded-2xl border-2 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 ${
+                className={`w-16 h-16 flex items-center justify-center rounded-2xl border-2 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 flex-shrink-0 ${
                   isWished 
                     ? 'border-red-500 bg-red-50 text-red-500' 
-                    : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300'
+                    : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-red-400'
                 }`}
               >
-                <Heart className={`w-8 h-8 ${isWished ? 'fill-red-500' : ''}`} />
+                <Heart className={`w-8 h-8 transition-colors ${isWished ? 'fill-red-500' : ''}`} />
               </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-8 border-t border-gray-100">
+              <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 rounded-xl">
+                <Truck className="w-8 h-8 text-amber-900 mb-2" />
+                <span className="text-sm font-medium text-gray-900">{locale === 'vi' ? 'Giao hàng tận nơi' : 'Fast Delivery'}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 rounded-xl">
+                <Sparkles className="w-8 h-8 text-amber-900 mb-2" />
+                <span className="text-sm font-medium text-gray-900">{locale === 'vi' ? 'Thủ công 100%' : '100% Handmade'}</span>
+              </div>
+              <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 rounded-xl">
+                <ShieldCheck className="w-8 h-8 text-amber-900 mb-2" />
+                <span className="text-sm font-medium text-gray-900">{locale === 'vi' ? 'Kiểm tra hàng trước' : 'Secure Check'}</span>
+              </div>
             </div>
           </div>
         </div>
