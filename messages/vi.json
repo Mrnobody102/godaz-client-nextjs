@@ -134,5 +134,25 @@
     "description": "Mô tả sản phẩm",
     "notFound": "Không tìm thấy sản phẩm",
     "price_per": "{price}₫ /{unit}"
+  },
+  "search": {
+    "placeholder": "Tìm kiếm sản phẩm...",
+    "all": "Tất cả danh mục",
+    "noResults": "Không tìm thấy sản phẩm nào."
+  },
+  "checkout": {
+    "title": "Thanh Toán",
+    "shipping": "Thông tin giao hàng",
+    "payment": "Phương thức thanh toán",
+    "name": "Họ và Tên",
+    "phone": "Số điện thoại",
+    "address": "Địa chỉ giao hàng",
+    "placeOrder": "Đặt Hàng",
+    "cod": "Thanh toán khi nhận hàng (COD)",
+    "banking": "Chuyển khoản ngân hàng",
+    "momo": "Ví điện tử Momo",
+    "successTitle": "Đặt hàng thành công!",
+    "successDesc": "Đơn hàng #{orderId} của bạn đã được xác nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất.",
+    "continueShopping": "Tiếp tục mua sắm"
   }
 }

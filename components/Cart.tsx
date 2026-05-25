@@ -2,8 +2,9 @@
 
 import Image from 'next/image';
 import { X, Minus, Plus, ShoppingBag } from 'lucide-react';
-import { Product } from './ProductCard';
+import { Product } from '@/lib/constants/products';
 import { useTranslations, useLocale } from 'next-intl';
+import { Link } from '@/i18n/routing';
 
 export interface CartItem extends Product {
   quantity: number;
@@ -133,9 +134,13 @@ export function Cart({
                 ₫
               </span>
             </div>
-            <button className="w-full bg-amber-900 hover:bg-amber-800 text-white py-3 rounded-lg transition">
+            <Link 
+              href="/checkout"
+              onClick={onClose}
+              className="w-full bg-amber-900 hover:bg-amber-800 text-white py-3 rounded-lg transition text-center block"
+            >
               {t('checkout')}
-            </button>
+            </Link>
           </div>
         )}
       </div>

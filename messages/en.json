@@ -143,5 +143,25 @@
     "description": "Description",
     "notFound": "Product not found",
     "price_per": "{price} VND /{unit}"
+  },
+  "search": {
+    "placeholder": "Search products...",
+    "all": "All Categories",
+    "noResults": "No products found matching your search."
+  },
+  "checkout": {
+    "title": "Checkout",
+    "shipping": "Shipping Information",
+    "payment": "Payment Method",
+    "name": "Full Name",
+    "phone": "Phone Number",
+    "address": "Delivery Address",
+    "placeOrder": "Place Order",
+    "cod": "Cash on Delivery",
+    "banking": "Bank Transfer",
+    "momo": "Momo E-Wallet",
+    "successTitle": "Order Placed Successfully!",
+    "successDesc": "Your order #{orderId} has been confirmed. We will contact you shortly.",
+    "continueShopping": "Continue Shopping"
   }
 }

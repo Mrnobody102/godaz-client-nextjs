@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Product } from '@/components/ProductCard';
+import { Product } from '@/lib/constants/products';
 
 interface CartItem extends Product {
   quantity: number;

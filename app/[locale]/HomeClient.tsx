@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
@@ -10,13 +10,17 @@ import { Cart } from '@/components/Cart';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
+import { Search } from 'lucide-react';
 
 
 
 export default function HomeClient() {
   const t = useTranslations('home');
+  const tSearch = useTranslations('search');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   // Use Zustand store instead of local state
   const {
@@ -44,6 +48,20 @@ export default function HomeClient() {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
+  const categories = useMemo(() => {
+    const cats = new Set(handicraftProducts.map((p) => p.category));
+    return Array.from(cats);
+  }, []);
+
+  const filteredProducts = useMemo(() => {
+    return handicraftProducts.filter((product) => {
+      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            product.description.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
+      return matchesSearch && matchesCategory;
+    });
+  }, [searchQuery, selectedCategory]);
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Header
@@ -55,22 +73,70 @@ export default function HomeClient() {
 
       <section id="products" className="py-16 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               {t('products.title')}
             </h2>
             <p className="text-lg text-gray-600">{t('products.description')}</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {handicraftProducts.map((product) => (
-              <ProductCard
-                key={product.id}
-                product={product}
-                onAddToCart={addToCart}
+          {/* Search and Filter */}
+          <div className="mb-10 flex flex-col md:flex-row gap-4 items-center justify-between">
+            <div className="relative w-full md:w-96">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search className="h-5 w-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                placeholder={tSearch('placeholder')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-amber-900 focus:border-amber-900 sm:text-sm transition-colors"
               />
-            ))}
+            </div>
+            
+            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
+              <button
+                onClick={() => setSelectedCategory(null)}
+                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                  selectedCategory === null
+                    ? 'bg-amber-900 text-white'
+                    : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
+                }`}
+              >
+                {tSearch('all')}
+              </button>
+              {categories.map((category) => (
+                <button
+                  key={category}
+                  onClick={() => setSelectedCategory(category)}
+                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                    selectedCategory === category
+                      ? 'bg-amber-900 text-white'
+                      : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
           </div>
+
+          {filteredProducts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {filteredProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  product={product}
+                  onAddToCart={addToCart}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+              <p className="text-xl text-gray-500">{tSearch('noResults')}</p>
+            </div>
+          )}
         </div>
       </section>
 
