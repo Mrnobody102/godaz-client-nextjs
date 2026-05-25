@@ -11,11 +11,6 @@
       "contact": "Contact"
     }
   },
-  "product": {
-    "add": "Add",
-    "price_per": "{price} VND /{unit}"
-  },
-
   "hero": {
     "title": "Vietnamese Handicrafts",
     "subtitle": "Handcrafted products rich in cultural tradition",
@@ -37,7 +32,7 @@
     "placeholders": {
       "name": "John Doe",
       "email": "email@example.com",
-      "password": "••••••••"
+      "password": "********"
     },
     "actions": {
       "forgot_password": "Forgot your password?",
@@ -97,36 +92,9 @@
     },
     "copyright": "© {year} {company}. All rights reserved."
   },
-  "ui": {
-    "command": {
-      "title": "Command Palette",
-      "description": "Search for a command to run...",
-      "empty": "No results found"
-    },
-    "image": {
-      "error_alt": "Error loading image"
-    }
-  },
-  "errors": {
-    "validation": {
-      "name_min": "Name must be at least 3 characters",
-      "slug_min": "Slug must be at least 3 characters",
-      "category_min": "Category must be at least 3 characters",
-      "brand_min": "Brand must be at least 3 characters",
-      "description_min": "Description must be at least 3 characters",
-      "images_min": "Product must have at least one image",
-      "item_id_required": "Item ID is required",
-      "item_name_required": "Item name is required",
-      "invalid_image_url": "Invalid image URL",
-      "item_slug_required": "Item slug is required",
-      "price_positive": "Price must be positive",
-      "quantity_non_negative": "Quantity must be non-negative",
-      "currency_format": "Must be a valid currency amount (e.g. 1234.56)",
-      "session_cart_required": "Session cart ID is required",
-      "invalid_email": "Invalid email address",
-      "email_min": "Email must be at least 3 characters",
-      "password_min": "Password must be at least 3 characters"
-    }
+  "product": {
+    "add": "Add",
+    "price_per": "{price} VND /{unit}"
   },
   "cart": {
     "title": "Cart",
@@ -134,7 +102,9 @@
     "item_price_per": "{price} VND /{unit}",
     "remove": "Remove",
     "total": "Total:",
-    "checkout": "Checkout"
+    "checkout": "Checkout",
+    "continueShopping": "Continue Shopping",
+    "addToCartSuccess": "Added to cart successfully"
   },
   "productDetail": {
     "backToHome": "Back to Home",
@@ -142,12 +112,17 @@
     "category": "Category:",
     "description": "Description",
     "notFound": "Product not found",
-    "price_per": "{price} VND /{unit}"
+    "price_per": "{price} VND /{unit}",
+    "related": "Related Products"
   },
   "search": {
     "placeholder": "Search products...",
     "all": "All Categories",
-    "noResults": "No products found matching your search."
+    "noResults": "No products found matching your search.",
+    "sort": "Sort by",
+    "sortNewest": "Newest",
+    "sortPriceAsc": "Price: Low to High",
+    "sortPriceDesc": "Price: High to Low"
   },
   "checkout": {
     "title": "Checkout",
@@ -163,5 +138,11 @@
     "successTitle": "Order Placed Successfully!",
     "successDesc": "Your order #{orderId} has been confirmed. We will contact you shortly.",
     "continueShopping": "Continue Shopping"
+  },
+  "wishlist": {
+    "title": "My Wishlist",
+    "empty": "Your wishlist is empty",
+    "add": "Added to wishlist",
+    "remove": "Removed from wishlist"
   }
 }

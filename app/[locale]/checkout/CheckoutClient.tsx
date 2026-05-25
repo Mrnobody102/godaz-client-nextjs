@@ -10,6 +10,7 @@ import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
 import { Link } from '@/i18n/routing';
+import useOrderStore from '@/stores/orderStore';
 
 export default function CheckoutClient() {
   const t = useTranslations('checkout');
@@ -37,13 +38,24 @@ export default function CheckoutClient() {
   }, 0);
 
   const [paymentMethod, setPaymentMethod] = useState('cod');
+  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  const { addOrder } = useOrderStore();
   
   const handleCheckout = (e: React.FormEvent) => {
     e.preventDefault();
     if (cartItems.length === 0) return;
     
-    // Simulate order placement
     const orderId = Math.floor(Math.random() * 1000000).toString();
+    const newOrder = {
+      id: orderId,
+      date: new Date().toISOString(),
+      items: [...cartItems],
+      total: total,
+      status: 'pending' as const,
+      customer: formData,
+      paymentMethod,
+    };
+    addOrder(newOrder);
     clearCart();
     router.push(`/checkout/success?orderId=${orderId}`);
   };
@@ -75,15 +87,15 @@ export default function CheckoutClient() {
                 <div className="space-y-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
-                    <input type="text" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900" />
+                    <input type="text" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
-                    <input type="tel" required className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900" />
+                    <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900" />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
-                    <textarea required rows={3} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"></textarea>
+                    <textarea required rows={3} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"></textarea>
                   </div>
                 </div>
               </div>

@@ -33,7 +33,7 @@
     "placeholders": {
       "name": "Nguyễn Văn A",
       "email": "email@example.com",
-      "password": "••••••••"
+      "password": "********"
     },
     "actions": {
       "forgot_password": "Quên mật khẩu?",
@@ -43,11 +43,16 @@
       "switch_to_login": "Đăng nhập",
       "prompt_no_account": "Chưa có tài khoản?",
       "prompt_have_account": "Đã có tài khoản?"
-    }
-  },
-  "product": {
-    "add": "Thêm",
-    "price_per": "{price}₫ /{unit}"
+    },
+    "errors": {
+      "invalid_credentials": "Tài khoản hoặc mật khẩu không đúng",
+      "required_name": "Vui lòng nhập họ tên",
+      "password_too_short": "Mật khẩu phải có ít nhất 6 ký tự",
+      "password_mismatch": "Xác nhận mật khẩu không khớp",
+      "email_taken": "Email này đã được sử dụng",
+      "generic": "Có lỗi xảy ra, vui lòng thử lại"
+    },
+    "continue_with": "Hoặc tiếp tục với"
   },
   "home": {
     "products": {
@@ -88,36 +93,9 @@
     },
     "copyright": "© {year} {company}. All rights reserved."
   },
-  "ui": {
-    "command": {
-      "title": "Bảng lệnh",
-      "description": "Tìm kiếm lệnh để thực hiện...",
-      "empty": "Không có kết quả"
-    },
-    "image": {
-      "error_alt": "Lỗi tải ảnh"
-    }
-  },
-  "errors": {
-    "validation": {
-      "name_min": "Tên phải có ít nhất 3 ký tự",
-      "slug_min": "Slug phải có ít nhất 3 ký tự",
-      "category_min": "Thể loại phải có ít nhất 3 ký tự",
-      "brand_min": "Thương hiệu phải có ít nhất 3 ký tự",
-      "description_min": "Mô tả phải có ít nhất 3 ký tự",
-      "images_min": "Sản phẩm phải có ít nhất một hình ảnh",
-      "item_id_required": "ID mục là bắt buộc",
-      "item_name_required": "Tên mục là bắt buộc",
-      "invalid_image_url": "URL hình ảnh không hợp lệ",
-      "item_slug_required": "Slug mục là bắt buộc",
-      "price_positive": "Giá phải là số dương",
-      "quantity_non_negative": "Số lượng phải lớn hơn hoặc bằng 0",
-      "currency_format": "Phải là giá trị tiền tệ hợp lệ (ví dụ 1234.56)",
-      "session_cart_required": "Session cart ID là bắt buộc",
-      "invalid_email": "Địa chỉ email không hợp lệ",
-      "email_min": "Email phải có ít nhất 3 ký tự",
-      "password_min": "Mật khẩu phải có ít nhất 3 ký tự"
-    }
+  "product": {
+    "add": "Thêm",
+    "price_per": "{price}₫ /{unit}"
   },
   "cart": {
     "title": "Giỏ Hàng",
@@ -125,7 +103,9 @@
     "item_price_per": "{price}₫ /{unit}",
     "remove": "Xóa",
     "total": "Tổng cộng:",
-    "checkout": "Đặt Hàng"
+    "checkout": "Đặt Hàng",
+    "continueShopping": "Tiếp tục mua sắm",
+    "addToCartSuccess": "Đã thêm vào giỏ hàng"
   },
   "productDetail": {
     "backToHome": "Quay lại Trang chủ",
@@ -133,12 +113,17 @@
     "category": "Danh mục:",
     "description": "Mô tả sản phẩm",
     "notFound": "Không tìm thấy sản phẩm",
-    "price_per": "{price}₫ /{unit}"
+    "price_per": "{price}₫ /{unit}",
+    "related": "Sản phẩm liên quan"
   },
   "search": {
     "placeholder": "Tìm kiếm sản phẩm...",
     "all": "Tất cả danh mục",
-    "noResults": "Không tìm thấy sản phẩm nào."
+    "noResults": "Không tìm thấy sản phẩm nào.",
+    "sort": "Sắp xếp theo",
+    "sortNewest": "Mới nhất",
+    "sortPriceAsc": "Giá: Thấp đến Cao",
+    "sortPriceDesc": "Giá: Cao đến Thấp"
   },
   "checkout": {
     "title": "Thanh Toán",
@@ -154,5 +139,11 @@
     "successTitle": "Đặt hàng thành công!",
     "successDesc": "Đơn hàng #{orderId} của bạn đã được xác nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất.",
     "continueShopping": "Tiếp tục mua sắm"
+  },
+  "wishlist": {
+    "title": "Sản phẩm Yêu thích",
+    "empty": "Danh sách yêu thích đang trống",
+    "add": "Đã thêm vào danh sách yêu thích",
+    "remove": "Đã xóa khỏi danh sách yêu thích"
   }
 }

@@ -2,6 +2,7 @@
 
 import { Mail, Phone, MapPin } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/i18n/routing';
 
 export function Footer() {
   const t = useTranslations('footer');
@@ -25,24 +26,24 @@ export function Footer() {
             <h3 className="mb-4">{t('about.title')}</h3>
             <ul className="space-y-2 text-gray-400">
               <li>
-                <a href="#" className="hover:text-white transition">
+                <Link href="/#about" className="hover:text-white transition">
                   {t('about.links.intro')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition">
+                <Link href="/#services" className="hover:text-white transition">
                   {t('about.links.services')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition">
+                <Link href="/#policies" className="hover:text-white transition">
                   {t('about.links.policies')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="hover:text-white transition">
+                <Link href="/#partners" className="hover:text-white transition">
                   {t('about.links.partners')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

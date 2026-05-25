@@ -3,14 +3,17 @@
 import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
-import { ArrowLeft, ShoppingBag } from 'lucide-react';
+import { ArrowLeft, ShoppingBag, Heart } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
-import { Product } from '@/lib/constants/products';
+import { Product, handicraftProducts } from '@/lib/constants/products';
+import { ProductCard } from '@/components/ProductCard';
 import { Link } from '@/i18n/routing';
 import useCartStore from '@/stores/cartStore';
+import useWishlistStore from '@/stores/wishlistStore';
+import { toast } from 'sonner';
 
 interface Props {
   product: Product;
@@ -18,11 +21,34 @@ interface Props {
 
 export default function ProductDetailClient({ product }: Props) {
   const t = useTranslations('productDetail');
+  const tWishlist = useTranslations('wishlist');
   const locale = useLocale();
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  const { items: cartItems, addItem, updateQuantity, removeItem } = useCartStore();
+  const { items: cartItems, addItem: addCartItem, updateQuantity, removeItem } = useCartStore();
+  const { isInWishlist, addItem: addWishlistItem, removeItem: removeWishlistItem } = useWishlistStore();
+
+  const isWished = isInWishlist(product.id);
+
+  const handleWishlistClick = () => {
+    if (isWished) {
+      removeWishlistItem(product.id);
+      toast(tWishlist('remove'));
+    } else {
+      addWishlistItem(product);
+      toast.success(tWishlist('add'));
+    }
+  };
+
+  const handleAddToCart = () => {
+    addCartItem(product);
+    toast.success(product.name + ' ✓');
+  };
+
+  const relatedProducts = handicraftProducts
+    .filter((p) => p.category === product.category && p.id !== product.id)
+    .slice(0, 4);
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
@@ -87,15 +113,48 @@ export default function ProductDetailClient({ product }: Props) {
               </p>
             </div>
             
-            <button
-              onClick={() => addItem(product)}
-              className="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-lg"
-            >
-              <ShoppingBag className="w-6 h-6" />
-              {t('addToCart')}
-            </button>
+            <div className="flex gap-4">
+              <button
+                onClick={handleAddToCart}
+                className="flex-1 bg-amber-900 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-lg"
+              >
+                <ShoppingBag className="w-6 h-6" />
+                {t('addToCart')}
+              </button>
+              
+              <button
+                onClick={handleWishlistClick}
+                className={`w-16 h-16 flex items-center justify-center rounded-2xl border-2 transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 ${
+                  isWished 
+                    ? 'border-red-500 bg-red-50 text-red-500' 
+                    : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300'
+                }`}
+              >
+                <Heart className={`w-8 h-8 ${isWished ? 'fill-red-500' : ''}`} />
+              </button>
+            </div>
           </div>
         </div>
+
+        {relatedProducts.length > 0 && (
+          <div className="mt-20">
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">
+              {t('related')}
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {relatedProducts.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  onAddToCart={(prod) => {
+                    addCartItem(prod);
+                    toast.success(prod.name + ' ✓');
+                  }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
       </main>
 
       <Footer />

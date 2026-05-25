@@ -21,6 +21,7 @@ export default function HomeClient() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<string>('newest');
 
   // Use Zustand store instead of local state
   const {
@@ -54,13 +55,21 @@ export default function HomeClient() {
   }, []);
 
   const filteredProducts = useMemo(() => {
-    return handicraftProducts.filter((product) => {
+    let result = handicraftProducts.filter((product) => {
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             product.description.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+
+    if (sortOrder === 'price-asc') {
+      result.sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sortOrder === 'price-desc') {
+      result.sort((a, b) => Number(b.price) - Number(a.price));
+    }
+
+    return result;
+  }, [searchQuery, selectedCategory, sortOrder]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -95,30 +104,42 @@ export default function HomeClient() {
               />
             </div>
             
-            <div className="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 scrollbar-hide">
-              <button
-                onClick={() => setSelectedCategory(null)}
-                className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                  selectedCategory === null
-                    ? 'bg-amber-900 text-white'
-                    : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
-                }`}
-              >
-                {tSearch('all')}
-              </button>
-              {categories.map((category) => (
+            <div className="flex flex-col sm:flex-row gap-4 justify-between w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+              <div className="flex gap-2 min-w-max">
                 <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  onClick={() => setSelectedCategory(null)}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === category
+                    selectedCategory === null
                       ? 'bg-amber-900 text-white'
                       : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
                   }`}
                 >
-                  {category}
+                  {tSearch('all')}
                 </button>
-              ))}
+                {categories.map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+                      selectedCategory === category
+                        ? 'bg-amber-900 text-white'
+                        : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
+                    }`}
+                  >
+                    {category}
+                  </button>
+                ))}
+              </div>
+
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value)}
+                className="block w-full sm:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 sm:text-sm rounded-xl border bg-white text-gray-700"
+              >
+                <option value="newest">{tSearch('sortNewest')}</option>
+                <option value="price-asc">{tSearch('sortPriceAsc')}</option>
+                <option value="price-desc">{tSearch('sortPriceDesc')}</option>
+              </select>
             </div>
           </div>
 

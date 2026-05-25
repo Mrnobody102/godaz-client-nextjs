@@ -4,6 +4,7 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { Inter } from 'next/font/google';
 import '../(root)/globals.css';
 import { LayoutClient } from './layout-client';
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -29,6 +30,7 @@ export default async function LocaleLayout({
       <body className={`${inter.className} antialiased`}>
         <NextIntlClientProvider messages={messages} locale={locale}>
           <LayoutClient>{children}</LayoutClient>
+          <Toaster richColors position="top-right" />
         </NextIntlClientProvider>
       </body>
     </html>

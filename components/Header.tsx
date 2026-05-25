@@ -1,13 +1,14 @@
 'use client';
 
-import { ShoppingCart, Menu, X, User, LogOut, Globe } from 'lucide-react';
+import { ShoppingCart, Menu, X, User, LogOut, Globe, Heart, Package } from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   useTranslations as useNextIntlTranslations,
   useLocale,
 } from 'next-intl';
-import { usePathname, useRouter } from 'next/navigation';
+import { Link, useRouter, usePathname } from '@/i18n/routing';
+import useWishlistStore from '@/stores/wishlistStore';
 
 function useSafeTranslations(ns: string) {
   try {
@@ -49,6 +50,8 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
   const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
+  const { items: wishlistItems } = useWishlistStore();
+  const wishlistCount = wishlistItems.length;
 
   const handleLogout = () => {
     logout();
@@ -56,8 +59,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
   };
 
   const handleLanguageChange = (newLocale: string) => {
-    const currentPath = pathname.replace(`/${locale}`, '');
-    router.push(`/${newLocale}${currentPath || ''}`);
+    router.replace({ pathname: pathname as any }, { locale: newLocale });
     setLangMenuOpen(false);
   };
 
@@ -76,30 +78,30 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <a
-              href="#home"
+            <Link
+              href="/#home"
               className="text-gray-700 hover:text-amber-900 transition"
             >
               {t('nav.home')}
-            </a>
-            <a
-              href="#products"
+            </Link>
+            <Link
+              href="/#products"
               className="text-gray-700 hover:text-amber-900 transition"
             >
               {t('nav.products')}
-            </a>
-            <a
-              href="#about"
+            </Link>
+            <Link
+              href="/#about"
               className="text-gray-700 hover:text-amber-900 transition"
             >
               {t('nav.about')}
-            </a>
-            <a
-              href="#contact"
+            </Link>
+            <Link
+              href="/#contact"
               className="text-gray-700 hover:text-amber-900 transition"
             >
               {t('nav.contact')}
-            </a>
+            </Link>
           </nav>
 
           <div className="flex items-center space-x-4">
@@ -129,9 +131,17 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                         <p className="text-sm text-gray-900">{user.name}</p>
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
+                      <Link
+                        href="/profile"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <Package className="w-4 h-4" />
+                        {locale === 'vi' ? 'Đơn hàng của tôi' : 'My Orders'}
+                      </Link>
                       <button
                         onClick={handleLogout}
-                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t"
                       >
                         <LogOut className="w-4 h-4" />
                         {t('logout')}
@@ -194,6 +204,18 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
               )}
             </div>
 
+            <Link
+              href="/wishlist"
+              className="relative p-2 hover:bg-gray-100 rounded-lg transition"
+            >
+              <Heart className="w-6 h-6 text-gray-700" />
+              {wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+
             <button
               onClick={onCartClick}
               className="relative p-2 hover:bg-gray-100 rounded-lg transition"
@@ -223,34 +245,34 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
         {/* Mobile Menu */}
         {mobileMenuOpen && (
           <nav className="md:hidden py-4 border-t">
-            <a
-              href="#home"
+            <Link
+              href="/#home"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('nav.home')}
-            </a>
-            <a
-              href="#products"
+            </Link>
+            <Link
+              href="/#products"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('nav.products')}
-            </a>
-            <a
-              href="#about"
+            </Link>
+            <Link
+              href="/#about"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('nav.about')}
-            </a>
-            <a
-              href="#contact"
+            </Link>
+            <Link
+              href="/#contact"
               className="block py-2 text-gray-700 hover:text-amber-900 transition"
               onClick={() => setMobileMenuOpen(false)}
             >
               {t('nav.contact')}
-            </a>
+            </Link>
             {!user && (
               <button
                 onClick={() => {
