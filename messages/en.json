@@ -94,7 +94,10 @@
   },
   "product": {
     "add": "Add",
-    "price_per": "{price} VND /{unit}"
+    "price_per": "{price} VND /{unit}",
+    "soldOut": "Sold out",
+    "stockLimit": "No more stock available",
+    "addedToCart": "{name} added to cart"
   },
   "cart": {
     "title": "Cart",
@@ -104,7 +107,8 @@
     "total": "Total:",
     "checkout": "Checkout",
     "continueShopping": "Continue Shopping",
-    "addToCartSuccess": "Added to cart successfully"
+    "addToCartSuccess": "Added to cart successfully",
+    "stock": "Stock: {stock}"
   },
   "productDetail": {
     "backToHome": "Back to Home",
@@ -113,16 +117,31 @@
     "description": "Description",
     "notFound": "Product not found",
     "price_per": "{price} VND /{unit}",
-    "related": "Related Products"
+    "related": "Related Products",
+    "stockLimit": "No more stock available",
+    "addedToCart": "{name} added to cart"
   },
   "search": {
     "placeholder": "Search products...",
     "all": "All Categories",
     "noResults": "No products found matching your search.",
+    "filters": "Filters",
+    "clearFilters": "Clear filters",
     "sort": "Sort by",
     "sortNewest": "Newest",
     "sortPriceAsc": "Price: Low to High",
-    "sortPriceDesc": "Price: High to Low"
+    "sortPriceDesc": "Price: High to Low",
+    "minPrice": "Min price",
+    "maxPrice": "Max price",
+    "inStock": "In stock",
+    "featured": "Featured",
+    "pageSize": "{size} / page",
+    "resultCount": "{count} products",
+    "pageOf": "Page {page} of {totalPages}",
+    "previous": "Previous page",
+    "next": "Next page",
+    "offlineFallback": "Showing local demo catalog",
+    "invalidPriceRange": "Minimum price cannot be greater than maximum price."
   },
   "checkout": {
     "title": "Checkout",

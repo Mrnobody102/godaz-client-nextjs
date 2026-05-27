@@ -1,11 +1,23 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import {
+  AuthUser,
+  isNetworkError,
+  loginRequest,
+  registerRequest,
+} from '@/lib/api';
 
 interface User {
   id: string;
   name: string;
   email: string;
+  username?: string;
+  role?: string;
+}
+
+interface StoredUser extends User {
+  password?: string;
 }
 
 interface AuthContextType {
@@ -18,11 +30,33 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function toUser(user: AuthUser): User {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+  };
+}
+
+function readLocalUsers(): StoredUser[] {
+  if (typeof window === 'undefined') return [];
+
+  const storedUsers = localStorage.getItem('users');
+  if (!storedUsers) return [];
+
+  try {
+    return JSON.parse(storedUsers) as StoredUser[];
+  } catch {
+    return [];
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Load user from localStorage on mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -35,31 +69,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(false);
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+  const persistSession = (nextUser: User, token?: string) => {
+    setUser(nextUser);
+    localStorage.setItem('user', JSON.stringify(nextUser));
+    if (token) {
+      localStorage.setItem('token', token);
+    }
+  };
 
-    // Get stored users
-    const storedUsers = localStorage.getItem('users');
-    const users = storedUsers ? JSON.parse(storedUsers) : [];
-
-    // Find user
-    const foundUser = users.find(
-      (u: any) => u.email === email && u.password === password
+  const loginWithLocalStorage = async (email: string, password: string) => {
+    const foundUser = readLocalUsers().find(
+      (storedUser) => storedUser.email === email && storedUser.password === password
     );
 
-    if (foundUser) {
-      const userData = {
-        id: foundUser.id,
-        name: foundUser.name,
-        email: foundUser.email,
-      };
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
+    if (!foundUser) return false;
+
+    const nextUser = {
+      id: foundUser.id,
+      name: foundUser.name,
+      email: foundUser.email,
+      username: foundUser.username || foundUser.email,
+      role: foundUser.role || 'USER',
+    };
+    persistSession(nextUser);
+    return true;
+  };
+
+  const login = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const response = await loginRequest(email, password);
+      persistSession(toUser(response.user), response.token);
       return true;
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return loginWithLocalStorage(email, password);
+      }
+      return false;
+    }
+  };
+
+  const registerWithLocalStorage = async (
+    name: string,
+    email: string,
+    password: string
+  ) => {
+    const users = readLocalUsers();
+    if (users.some((storedUser) => storedUser.email === email)) {
+      return false;
     }
 
-    return false;
+    const newUser: StoredUser = {
+      id: Date.now().toString(),
+      name,
+      email,
+      username: email,
+      password,
+      role: 'USER',
+    };
+
+    localStorage.setItem('users', JSON.stringify([...users, newUser]));
+    persistSession({
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      username: newUser.username,
+      role: newUser.role,
+    });
+    return true;
   };
 
   const register = async (
@@ -67,44 +143,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     email: string,
     password: string
   ): Promise<boolean> => {
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Get stored users
-    const storedUsers = localStorage.getItem('users');
-    const users = storedUsers ? JSON.parse(storedUsers) : [];
-
-    // Check if email already exists
-    if (users.find((u: any) => u.email === email)) {
+    try {
+      const response = await registerRequest(name, email, password);
+      persistSession(toUser(response.user), response.token);
+      return true;
+    } catch (error) {
+      if (isNetworkError(error)) {
+        return registerWithLocalStorage(name, email, password);
+      }
       return false;
     }
-
-    // Create new user
-    const newUser = {
-      id: Date.now().toString(),
-      name,
-      email,
-      password, // In production, this should be hashed
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    // Auto login after registration
-    const userData = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-    };
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
-
-    return true;
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
   };
 
   return (

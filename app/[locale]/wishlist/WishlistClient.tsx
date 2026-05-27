@@ -23,9 +23,9 @@ export default function WishlistClient() {
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
-      removeItem(String(id));
+      removeItem(id);
     } else {
-      updateQuantity(String(id), quantity);
+      updateQuantity(id, quantity);
     }
   };
 
@@ -62,8 +62,11 @@ export default function WishlistClient() {
                 key={product.id}
                 product={product}
                 onAddToCart={(p) => {
-                  addCartItem(p);
-                  setIsCartOpen(true);
+                  const added = addCartItem(p);
+                  if (added) {
+                    setIsCartOpen(true);
+                  }
+                  return added;
                 }}
               />
             ))}
@@ -78,7 +81,7 @@ export default function WishlistClient() {
         onClose={() => setIsCartOpen(false)}
         items={cartItems}
         onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={(id) => removeItem(String(id))}
+        onRemoveItem={(id) => removeItem(id)}
       />
 
       <AuthModal

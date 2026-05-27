@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslations } from 'next-intl';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
 import { ProductCard } from '@/components/ProductCard';
@@ -10,20 +11,133 @@ import { Cart } from '@/components/Cart';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
-import { Search } from 'lucide-react';
+import { fetchProducts, toProduct } from '@/lib/api';
+import {
+  ChevronLeft,
+  ChevronRight,
+  FilterX,
+  Leaf,
+  PackageCheck,
+  Palette,
+  Search,
+  SlidersHorizontal,
+} from 'lucide-react';
 
+const DEFAULT_PAGE_SIZE = 12;
+const PAGE_SIZE_OPTIONS = [12, 24, 48];
 
+interface CategoryOption {
+  label: string;
+  value: string;
+}
+
+interface PaginationState {
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
+const emptyPagination: PaginationState = {
+  totalElements: 0,
+  totalPages: 0,
+  page: 0,
+  size: DEFAULT_PAGE_SIZE,
+};
+
+function parsePageParam(value: string | null) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 1) return 0;
+  return Math.floor(parsed) - 1;
+}
+
+function parsePageSizeParam(value: string | null) {
+  const parsed = Number(value);
+  return PAGE_SIZE_OPTIONS.includes(parsed) ? parsed : DEFAULT_PAGE_SIZE;
+}
+
+function parseMoneyInput(value: string | null) {
+  if (!value) return '';
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return '';
+  return String(Math.floor(parsed));
+}
+
+function moneyFilter(value: string) {
+  if (!value.trim()) return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function matchesCategory(product: Product, category: string | null) {
+  if (!category) return true;
+  return product.categorySlug === category || product.category === category;
+}
+
+function categoryOptionsFromProducts(products: Product[]) {
+  const options = new Map<string, CategoryOption>();
+  products.forEach((product) => {
+    const value = product.categorySlug || String(product.category);
+    if (!options.has(value)) {
+      options.set(value, { label: product.category, value });
+    }
+  });
+  return Array.from(options.values());
+}
+
+function buildPageButtons(page: number, totalPages: number) {
+  if (totalPages <= 0) return [];
+  const windowSize = 5;
+  const start = Math.max(0, Math.min(page - 2, totalPages - windowSize));
+  const end = Math.min(totalPages, start + windowSize);
+  return Array.from({ length: end - start }, (_, index) => start + index);
+}
 
 export default function HomeClient() {
   const t = useTranslations('home');
   const tSearch = useTranslations('search');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const queryString = searchParams.toString();
+  const queryStringRef = useRef(queryString);
+
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<string>('newest');
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(
+    () => searchParams.get('q') || ''
+  );
+  const [debouncedSearch, setDebouncedSearch] = useState(searchQuery);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(
+    () => searchParams.get('category') || null
+  );
+  const [sortOrder, setSortOrder] = useState(
+    () => searchParams.get('sort') || 'newest'
+  );
+  const [page, setPage] = useState(() => parsePageParam(searchParams.get('page')));
+  const [pageSize, setPageSize] = useState(() =>
+    parsePageSizeParam(searchParams.get('size'))
+  );
+  const [minPrice, setMinPrice] = useState(() =>
+    parseMoneyInput(searchParams.get('minPrice'))
+  );
+  const [maxPrice, setMaxPrice] = useState(() =>
+    parseMoneyInput(searchParams.get('maxPrice'))
+  );
+  const [inStockOnly, setInStockOnly] = useState(
+    () => searchParams.get('inStock') === 'true'
+  );
+  const [featuredOnly, setFeaturedOnly] = useState(
+    () => searchParams.get('featured') === 'true'
+  );
+  const [products, setProducts] = useState<Product[]>([]);
+  const [apiCategories, setApiCategories] = useState<CategoryOption[]>([]);
+  const [apiConnected, setApiConnected] = useState(false);
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true);
+  const [catalogError, setCatalogError] = useState('');
+  const [pagination, setPagination] = useState<PaginationState>(emptyPagination);
 
-  // Use Zustand store instead of local state
   const {
     items: cartItems,
     addItem,
@@ -31,46 +145,292 @@ export default function HomeClient() {
     removeItem,
   } = useCartStore();
 
+  useEffect(() => {
+    queryStringRef.current = queryString;
+  }, [queryString]);
+
+  useEffect(() => {
+    const nextSearch = searchParams.get('q') || '';
+    const nextCategory = searchParams.get('category') || null;
+    const nextSort = searchParams.get('sort') || 'newest';
+    const nextPage = parsePageParam(searchParams.get('page'));
+    const nextSize = parsePageSizeParam(searchParams.get('size'));
+    const nextMinPrice = parseMoneyInput(searchParams.get('minPrice'));
+    const nextMaxPrice = parseMoneyInput(searchParams.get('maxPrice'));
+    const nextInStockOnly = searchParams.get('inStock') === 'true';
+    const nextFeaturedOnly = searchParams.get('featured') === 'true';
+
+    setSearchQuery((current) => (current === nextSearch ? current : nextSearch));
+    setDebouncedSearch((current) =>
+      current === nextSearch ? current : nextSearch
+    );
+    setSelectedCategory((current) =>
+      current === nextCategory ? current : nextCategory
+    );
+    setSortOrder((current) => (current === nextSort ? current : nextSort));
+    setPage((current) => (current === nextPage ? current : nextPage));
+    setPageSize((current) => (current === nextSize ? current : nextSize));
+    setMinPrice((current) =>
+      current === nextMinPrice ? current : nextMinPrice
+    );
+    setMaxPrice((current) =>
+      current === nextMaxPrice ? current : nextMaxPrice
+    );
+    setInStockOnly((current) =>
+      current === nextInStockOnly ? current : nextInStockOnly
+    );
+    setFeaturedOnly((current) =>
+      current === nextFeaturedOnly ? current : nextFeaturedOnly
+    );
+  }, [searchParams]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeout);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(queryStringRef.current);
+
+    const setOrDelete = (key: string, value: string | number | boolean | null) => {
+      if (value === null || value === '' || value === false) {
+        params.delete(key);
+      } else {
+        params.set(key, String(value));
+      }
+    };
+
+    setOrDelete('q', debouncedSearch);
+    setOrDelete('category', selectedCategory);
+    setOrDelete('sort', sortOrder === 'newest' ? null : sortOrder);
+    setOrDelete('page', page > 0 ? page + 1 : null);
+    setOrDelete('size', pageSize === DEFAULT_PAGE_SIZE ? null : pageSize);
+    setOrDelete('minPrice', minPrice);
+    setOrDelete('maxPrice', maxPrice);
+    setOrDelete('inStock', inStockOnly);
+    setOrDelete('featured', featuredOnly);
+
+    const nextQueryString = params.toString();
+    if (nextQueryString !== queryStringRef.current) {
+      router.replace(`${pathname}${nextQueryString ? `?${nextQueryString}` : ''}`, {
+        scroll: false,
+      });
+    }
+  }, [
+    debouncedSearch,
+    featuredOnly,
+    inStockOnly,
+    maxPrice,
+    minPrice,
+    page,
+    pageSize,
+    pathname,
+    router,
+    selectedCategory,
+    sortOrder,
+  ]);
+
+  const minPriceNumber = moneyFilter(minPrice);
+  const maxPriceNumber = moneyFilter(maxPrice);
+  const isPriceRangeInvalid =
+    minPriceNumber !== undefined &&
+    maxPriceNumber !== undefined &&
+    minPriceNumber > maxPriceNumber;
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadProducts() {
+      if (isPriceRangeInvalid) {
+        setCatalogError(tSearch('invalidPriceRange'));
+        setProducts([]);
+        setApiConnected(false);
+        setPagination(emptyPagination);
+        setIsLoadingProducts(false);
+        return;
+      }
+
+      setCatalogError('');
+      setIsLoadingProducts(true);
+      try {
+        const response = await fetchProducts({
+          search: debouncedSearch,
+          category: selectedCategory,
+          sort: sortOrder,
+          page,
+          size: pageSize,
+          minPrice: minPriceNumber,
+          maxPrice: maxPriceNumber,
+          inStock: inStockOnly ? true : undefined,
+          featured: featuredOnly ? true : undefined,
+        });
+        if (ignore) return;
+        setProducts(response.products.map(toProduct));
+        setApiCategories(
+          response.categories.map((category) => ({
+            label: category.name,
+            value: category.slug,
+          }))
+        );
+        setPagination({
+          totalElements: response.totalElements,
+          totalPages: response.totalPages,
+          page: response.page,
+          size: response.size,
+        });
+        setApiConnected(true);
+      } catch {
+        if (ignore) return;
+        setApiConnected(false);
+      } finally {
+        if (!ignore) {
+          setIsLoadingProducts(false);
+        }
+      }
+    }
+
+    loadProducts();
+
+    return () => {
+      ignore = true;
+    };
+  }, [
+    debouncedSearch,
+    featuredOnly,
+    inStockOnly,
+    isPriceRangeInvalid,
+    maxPriceNumber,
+    minPriceNumber,
+    page,
+    pageSize,
+    selectedCategory,
+    sortOrder,
+    tSearch,
+  ]);
+
+  const fallbackCategories = useMemo(
+    () => categoryOptionsFromProducts(handicraftProducts),
+    []
+  );
+
+  const fallbackFilteredProducts = useMemo(() => {
+    let result = handicraftProducts.filter((product) => {
+      const normalizedQuery = debouncedSearch.toLowerCase();
+      const matchesSearch =
+        product.name.toLowerCase().includes(normalizedQuery) ||
+        product.description.toLowerCase().includes(normalizedQuery);
+      const price = Number(product.price);
+      const matchesMinPrice =
+        minPriceNumber === undefined || price >= minPriceNumber;
+      const matchesMaxPrice =
+        maxPriceNumber === undefined || price <= maxPriceNumber;
+      const matchesInStock =
+        !inStockOnly || typeof product.stock !== 'number' || product.stock > 0;
+      const matchesFeatured = !featuredOnly || product.featured === true;
+
+      return (
+        matchesSearch &&
+        matchesCategory(product, selectedCategory) &&
+        matchesMinPrice &&
+        matchesMaxPrice &&
+        matchesInStock &&
+        matchesFeatured &&
+        !isPriceRangeInvalid
+      );
+    });
+
+    if (sortOrder === 'price-asc') {
+      result = [...result].sort((a, b) => Number(a.price) - Number(b.price));
+    } else if (sortOrder === 'price-desc') {
+      result = [...result].sort((a, b) => Number(b.price) - Number(a.price));
+    }
+
+    return result;
+  }, [
+    debouncedSearch,
+    featuredOnly,
+    inStockOnly,
+    isPriceRangeInvalid,
+    maxPriceNumber,
+    minPriceNumber,
+    selectedCategory,
+    sortOrder,
+  ]);
+
+  const fallbackTotalPages = Math.ceil(fallbackFilteredProducts.length / pageSize);
+  const fallbackProducts = useMemo(() => {
+    const start = page * pageSize;
+    return fallbackFilteredProducts.slice(start, start + pageSize);
+  }, [fallbackFilteredProducts, page, pageSize]);
+
+  const activeTotalPages = apiConnected
+    ? pagination.totalPages
+    : fallbackTotalPages;
+
+  useEffect(() => {
+    if (!isLoadingProducts && activeTotalPages > 0 && page >= activeTotalPages) {
+      setPage(activeTotalPages - 1);
+    }
+  }, [activeTotalPages, isLoadingProducts, page]);
+
+  const categories = apiConnected ? apiCategories : fallbackCategories;
+  const displayedProducts = apiConnected ? products : fallbackProducts;
+  const activeTotalElements = apiConnected
+    ? pagination.totalElements
+    : fallbackFilteredProducts.length;
+  const pageButtons = useMemo(
+    () => buildPageButtons(page, activeTotalPages),
+    [activeTotalPages, page]
+  );
+  const hasActiveFilters =
+    debouncedSearch ||
+    selectedCategory ||
+    sortOrder !== 'newest' ||
+    pageSize !== DEFAULT_PAGE_SIZE ||
+    minPrice ||
+    maxPrice ||
+    inStockOnly ||
+    featuredOnly;
+
   const addToCart = (product: Product) => {
-    addItem(product);
-    setIsCartOpen(true);
+    const added = addItem(product);
+    if (added) {
+      setIsCartOpen(true);
+    }
+    return added;
   };
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
-      removeItem(String(id));
+      removeItem(id);
     } else {
-      updateQuantity(String(id), quantity);
+      updateQuantity(id, quantity);
     }
   };
 
   const handleRemoveItem = (id: string | number) => {
-    removeItem(String(id));
+    removeItem(id);
   };
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const categories = useMemo(() => {
-    const cats = new Set(handicraftProducts.map((p) => p.category));
-    return Array.from(cats);
-  }, []);
+  const resetToFirstPage = () => setPage(0);
 
-  const filteredProducts = useMemo(() => {
-    let result = handicraftProducts.filter((product) => {
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            product.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory ? product.category === selectedCategory : true;
-      return matchesSearch && matchesCategory;
-    });
-
-    if (sortOrder === 'price-asc') {
-      result.sort((a, b) => Number(a.price) - Number(b.price));
-    } else if (sortOrder === 'price-desc') {
-      result.sort((a, b) => Number(b.price) - Number(a.price));
-    }
-
-    return result;
-  }, [searchQuery, selectedCategory, sortOrder]);
+  const clearFilters = () => {
+    setSearchQuery('');
+    setDebouncedSearch('');
+    setSelectedCategory(null);
+    setSortOrder('newest');
+    setPage(0);
+    setPageSize(DEFAULT_PAGE_SIZE);
+    setMinPrice('');
+    setMaxPrice('');
+    setInStockOnly(false);
+    setFeaturedOnly(false);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -90,25 +450,59 @@ export default function HomeClient() {
             <p className="text-lg text-gray-600">{t('products.description')}</p>
           </div>
 
-          {/* Search and Filter */}
-          <div className="mb-10 flex flex-col md:flex-row gap-4 items-center justify-between">
-            <div className="relative w-full md:w-96">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400" />
+          <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
+            <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
+              <div className="relative w-full lg:max-w-md">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Search className="h-5 w-5 text-gray-400" />
+                </div>
+                <input
+                  type="text"
+                  placeholder={tSearch('placeholder')}
+                  value={searchQuery}
+                  onChange={(event) => {
+                    setSearchQuery(event.target.value);
+                    resetToFirstPage();
+                  }}
+                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-amber-900 focus:border-amber-900 sm:text-sm transition-colors"
+                />
               </div>
-              <input
-                type="text"
-                placeholder={tSearch('placeholder')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-amber-900 focus:border-amber-900 sm:text-sm transition-colors"
-              />
-            </div>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-between w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-              <div className="flex gap-2 min-w-max">
+
+              <div className="flex items-center gap-3">
                 <button
-                  onClick={() => setSelectedCategory(null)}
+                  type="button"
+                  onClick={() => setIsMobileFiltersOpen((current) => !current)}
+                  className="inline-flex md:hidden items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  {tSearch('filters')}
+                </button>
+
+                {hasActiveFilters && (
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <FilterX className="h-4 w-4" />
+                    {tSearch('clearFilters')}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div
+              className={`mt-5 space-y-5 ${
+                isMobileFiltersOpen ? 'block' : 'hidden'
+              } md:block`}
+            >
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    resetToFirstPage();
+                  }}
                   className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
                     selectedCategory === null
                       ? 'bg-amber-900 text-white'
@@ -119,41 +513,199 @@ export default function HomeClient() {
                 </button>
                 {categories.map((category) => (
                   <button
-                    key={category}
-                    onClick={() => setSelectedCategory(category)}
+                    key={category.value}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(category.value);
+                      resetToFirstPage();
+                    }}
                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                      selectedCategory === category
+                      selectedCategory === category.value
                         ? 'bg-amber-900 text-white'
                         : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
                     }`}
                   >
-                    {category}
+                    {category.label}
                   </button>
                 ))}
               </div>
 
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                className="block w-full sm:w-auto pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 sm:text-sm rounded-xl border bg-white text-gray-700"
-              >
-                <option value="newest">{tSearch('sortNewest')}</option>
-                <option value="price-asc">{tSearch('sortPriceAsc')}</option>
-                <option value="price-desc">{tSearch('sortPriceDesc')}</option>
-              </select>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+                <select
+                  value={sortOrder}
+                  onChange={(event) => {
+                    setSortOrder(event.target.value);
+                    resetToFirstPage();
+                  }}
+                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
+                >
+                  <option value="newest">{tSearch('sortNewest')}</option>
+                  <option value="price-asc">{tSearch('sortPriceAsc')}</option>
+                  <option value="price-desc">{tSearch('sortPriceDesc')}</option>
+                </select>
+
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  placeholder={tSearch('minPrice')}
+                  value={minPrice}
+                  onChange={(event) => {
+                    setMinPrice(event.target.value);
+                    resetToFirstPage();
+                  }}
+                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
+                />
+
+                <input
+                  type="number"
+                  min="0"
+                  inputMode="numeric"
+                  placeholder={tSearch('maxPrice')}
+                  value={maxPrice}
+                  onChange={(event) => {
+                    setMaxPrice(event.target.value);
+                    resetToFirstPage();
+                  }}
+                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
+                />
+
+                <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={inStockOnly}
+                    onChange={(event) => {
+                      setInStockOnly(event.target.checked);
+                      resetToFirstPage();
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"
+                  />
+                  {tSearch('inStock')}
+                </label>
+
+                <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
+                  <input
+                    type="checkbox"
+                    checked={featuredOnly}
+                    onChange={(event) => {
+                      setFeaturedOnly(event.target.checked);
+                      resetToFirstPage();
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"
+                  />
+                  {tSearch('featured')}
+                </label>
+
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value));
+                    resetToFirstPage();
+                  }}
+                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {tSearch('pageSize', { size })}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-500">
+                <span>{tSearch('resultCount', { count: activeTotalElements })}</span>
+                {!apiConnected && !isLoadingProducts && (
+                  <span>{tSearch('offlineFallback')}</span>
+                )}
+              </div>
             </div>
           </div>
 
-          {filteredProducts.length > 0 ? (
+          {catalogError && (
+            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+              {catalogError}
+            </div>
+          )}
+
+          {isLoadingProducts && displayedProducts.length === 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {filteredProducts.map((product) => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  onAddToCart={addToCart}
-                />
+              {Array.from({ length: 8 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse"
+                >
+                  <div className="h-64 bg-gray-200" />
+                  <div className="p-6 space-y-4">
+                    <div className="h-5 bg-gray-200 rounded" />
+                    <div className="h-4 bg-gray-100 rounded" />
+                    <div className="h-10 bg-gray-200 rounded" />
+                  </div>
+                </div>
               ))}
             </div>
+          ) : displayedProducts.length > 0 ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {displayedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onAddToCart={addToCart}
+                  />
+                ))}
+              </div>
+
+              {activeTotalPages > 1 && (
+                <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <p className="text-sm text-gray-500">
+                    {tSearch('pageOf', {
+                      page: page + 1,
+                      totalPages: activeTotalPages,
+                    })}
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPage((current) => Math.max(0, current - 1))}
+                      disabled={page === 0}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label={tSearch('previous')}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+
+                    {pageButtons.map((pageNumber) => (
+                      <button
+                        key={pageNumber}
+                        type="button"
+                        onClick={() => setPage(pageNumber)}
+                        className={`h-10 min-w-10 rounded-lg border px-3 text-sm font-medium ${
+                          pageNumber === page
+                            ? 'border-amber-900 bg-amber-900 text-white'
+                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNumber + 1}
+                      </button>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPage((current) =>
+                          Math.min(activeTotalPages - 1, current + 1)
+                        )
+                      }
+                      disabled={page >= activeTotalPages - 1}
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                      aria-label={tSearch('next')}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
               <p className="text-xl text-gray-500">{tSearch('noResults')}</p>
@@ -167,7 +719,7 @@ export default function HomeClient() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             <div>
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">✓</span>
+                <PackageCheck className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">
                 {t('features.f1_title')}
@@ -176,7 +728,7 @@ export default function HomeClient() {
             </div>
             <div>
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">🎨</span>
+                <Palette className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">
                 {t('features.f2_title')}
@@ -185,7 +737,7 @@ export default function HomeClient() {
             </div>
             <div>
               <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-3xl">♻️</span>
+                <Leaf className="w-8 h-8" />
               </div>
               <h3 className="text-xl font-semibold mb-2">
                 {t('features.f3_title')}
@@ -196,7 +748,7 @@ export default function HomeClient() {
         </div>
       </section>
 
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
+      <section id="about" className="py-16 px-4 sm:px-6 lg:px-8 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">
             {t('about.title')}

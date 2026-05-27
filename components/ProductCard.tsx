@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { Plus, Heart } from 'lucide-react';
-import { useTranslations, useLocale } from 'next-intl';
+import { Heart, Plus } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Product } from '@/lib/constants/products';
 import useWishlistStore from '@/stores/wishlistStore';
@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 interface ProductCardProps {
   product: Product;
-  onAddToCart: (product: Product) => void;
+  onAddToCart: (product: Product) => boolean | void;
 }
 
 export function ProductCard({ product, onAddToCart }: ProductCardProps) {
@@ -18,8 +18,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
   const tWishlist = useTranslations('wishlist');
   const locale = useLocale();
   const { isInWishlist, addItem, removeItem } = useWishlistStore();
-  
+
   const isWished = isInWishlist(product.id);
+  const isOutOfStock = typeof product.stock === 'number' && product.stock <= 0;
 
   const handleWishlistClick = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -34,8 +35,17 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
-    onAddToCart(product);
-    toast.success(product.name + ' ✓');
+    if (isOutOfStock) {
+      toast.error(t('soldOut'));
+      return;
+    }
+
+    const added = onAddToCart(product);
+    if (added === false) {
+      toast.error(t('stockLimit'));
+      return;
+    }
+    toast.success(t('addedToCart', { name: product.name }));
   };
 
   const priceNum =
@@ -62,9 +72,14 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
           </span>
           <button
             onClick={handleWishlistClick}
+            type="button"
             className="p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-white transition-colors"
           >
-            <Heart className={`w-5 h-5 ${isWished ? 'fill-red-500 text-red-500' : 'text-gray-600'}`} />
+            <Heart
+              className={`w-5 h-5 ${
+                isWished ? 'fill-red-500 text-red-500' : 'text-gray-600'
+              }`}
+            />
           </button>
         </div>
       </Link>
@@ -75,19 +90,23 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             {product.name}
           </h3>
         </Link>
-        <p className="text-gray-600 text-sm mb-4">{product.description}</p>
+        <p className="text-gray-600 text-sm mb-4 flex-1">{product.description}</p>
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-3">
           <span className="text-2xl font-bold text-amber-900">
             {t('price_per', { price: formatted, unit: product.unit })}
           </span>
 
           <button
             onClick={handleAddToCart}
-            className="bg-amber-900 hover:bg-amber-800 text-white p-3 rounded-lg transition flex items-center gap-2"
+            type="button"
+            disabled={isOutOfStock}
+            className="bg-amber-900 hover:bg-amber-800 text-white p-3 rounded-lg transition flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <Plus className="w-5 h-5" />
-            <span className="hidden sm:inline">{t('add')}</span>
+            <span className="hidden sm:inline">
+              {isOutOfStock ? t('soldOut') : t('add')}
+            </span>
           </button>
         </div>
       </div>

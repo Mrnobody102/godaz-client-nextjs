@@ -58,67 +58,79 @@ export function Cart({
             </div>
           ) : (
             <div className="space-y-4">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex gap-4 bg-gray-50 p-4 rounded-lg"
-                >
-                  <Image
-                    src={item.image}
-                    alt={item.name}
-                    width={80}
-                    height={80}
-                    className="w-20 h-20 object-cover rounded"
-                  />
+              {items.map((item) => {
+                const isAtStockLimit =
+                  typeof item.stock === 'number' && item.quantity >= item.stock;
 
-                  <div className="flex-1">
-                    <h3 className="text-sm text-gray-900 mb-1">{item.name}</h3>
-                    <p className="text-amber-900 mb-2">
-                      {(() => {
-                        const price =
-                          typeof item.price === 'string'
-                            ? parseFloat(item.price)
-                            : item.price;
-                        return t('item_price_per', {
-                          price: new Intl.NumberFormat(locale, {
-                            maximumFractionDigits: 0,
-                          }).format(price),
-                          unit: item.unit,
-                        });
-                      })()}
-                    </p>
+                return (
+                  <div
+                    key={item.id}
+                    className="flex gap-4 bg-gray-50 p-4 rounded-lg"
+                  >
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      width={80}
+                      height={80}
+                      className="w-20 h-20 object-cover rounded"
+                    />
 
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() =>
-                          onUpdateQuantity(
-                            item.id,
-                            Math.max(0, item.quantity - 1)
-                          )
-                        }
-                        className="p-1 hover:bg-gray-200 rounded transition"
-                      >
-                        <Minus className="w-4 h-4" />
-                      </button>
-                      <span className="w-8 text-center">{item.quantity}</span>
-                      <button
-                        onClick={() =>
-                          onUpdateQuantity(item.id, item.quantity + 1)
-                        }
-                        className="p-1 hover:bg-gray-200 rounded transition"
-                      >
-                        <Plus className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => onRemoveItem(item.id)}
-                        className="ml-auto text-red-600 hover:text-red-700 text-sm"
-                      >
-                        {t('remove')}
-                      </button>
+                    <div className="flex-1">
+                      <h3 className="text-sm text-gray-900 mb-1">{item.name}</h3>
+                      <p className="text-amber-900 mb-2">
+                        {(() => {
+                          const price =
+                            typeof item.price === 'string'
+                              ? parseFloat(item.price)
+                              : item.price;
+                          return t('item_price_per', {
+                            price: new Intl.NumberFormat(locale, {
+                              maximumFractionDigits: 0,
+                            }).format(price),
+                            unit: item.unit,
+                          });
+                        })()}
+                      </p>
+
+                      {typeof item.stock === 'number' && (
+                        <p className="text-xs text-gray-500 mb-2">
+                          {t('stock', { stock: item.stock })}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() =>
+                            onUpdateQuantity(
+                              item.id,
+                              Math.max(0, item.quantity - 1)
+                            )
+                          }
+                          className="p-1 hover:bg-gray-200 rounded transition"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="w-8 text-center">{item.quantity}</span>
+                        <button
+                          onClick={() =>
+                            onUpdateQuantity(item.id, item.quantity + 1)
+                          }
+                          disabled={isAtStockLimit}
+                          className="p-1 hover:bg-gray-200 rounded transition disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => onRemoveItem(item.id)}
+                          className="ml-auto text-red-600 hover:text-red-700 text-sm"
+                        >
+                          {t('remove')}
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

@@ -1,28 +1,36 @@
 'use client';
 
-import { ShoppingCart, Menu, X, User, LogOut, Globe, Heart, Package } from 'lucide-react';
+import {
+  Globe,
+  Heart,
+  LogOut,
+  Menu,
+  Package,
+  ShoppingCart,
+  User,
+  X,
+} from 'lucide-react';
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import {
-  useTranslations as useNextIntlTranslations,
   useLocale,
+  useTranslations as useNextIntlTranslations,
 } from 'next-intl';
-import { Link, useRouter, usePathname } from '@/i18n/routing';
+import { Link, usePathname, useRouter } from '@/i18n/routing';
 import useWishlistStore from '@/stores/wishlistStore';
 
 function useSafeTranslations(ns: string) {
   try {
     return useNextIntlTranslations(ns);
   } catch {
-    // Fallback translator when provider is not available (during dev or redirect)
     const fallbackMap: Record<string, string> = {
       'header.title': 'Thủ Công Mỹ Nghệ',
-      'header.nav.home': 'Trang Chủ',
-      'header.nav.products': 'Sản Phẩm',
-      'header.nav.about': 'Giới Thiệu',
-      'header.nav.contact': 'Liên Hệ',
-      'header.signin': 'Đăng Nhập',
-      'header.logout': 'Đăng Xuất',
+      'header.nav.home': 'Trang chủ',
+      'header.nav.products': 'Sản phẩm',
+      'header.nav.about': 'Giới thiệu',
+      'header.nav.contact': 'Liên hệ',
+      'header.signin': 'Đăng nhập',
+      'header.logout': 'Đăng xuất',
     };
 
     return (key: string, opts?: Record<string, unknown>) => {
@@ -41,6 +49,8 @@ interface HeaderProps {
   onAuthClick: () => void;
 }
 
+type Locale = 'vi' | 'en';
+
 export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -58,57 +68,48 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
     setUserMenuOpen(false);
   };
 
-  const handleLanguageChange = (newLocale: string) => {
-    router.replace({ pathname: pathname as any }, { locale: newLocale });
+  const handleLanguageChange = (newLocale: Locale) => {
+    router.replace(pathname, { locale: newLocale });
     setLangMenuOpen(false);
   };
+
+  const navItems = [
+    { href: '/#home', label: t('nav.home') },
+    { href: '/#products', label: t('nav.products') },
+    { href: '/#about', label: t('nav.about') },
+    { href: '/#contact', label: t('nav.contact') },
+  ] as const;
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <div className="flex items-center space-x-2">
+          <Link href="/" className="flex items-center space-x-2">
             <div className="w-10 h-10 bg-amber-900 rounded-lg flex items-center justify-center text-white font-bold">
               TM
             </div>
             <span className="text-xl font-bold text-amber-900">
               {t('title')}
             </span>
-          </div>
+          </Link>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              href="/#home"
-              className="text-gray-700 hover:text-amber-900 transition"
-            >
-              {t('nav.home')}
-            </Link>
-            <Link
-              href="/#products"
-              className="text-gray-700 hover:text-amber-900 transition"
-            >
-              {t('nav.products')}
-            </Link>
-            <Link
-              href="/#about"
-              className="text-gray-700 hover:text-amber-900 transition"
-            >
-              {t('nav.about')}
-            </Link>
-            <Link
-              href="/#contact"
-              className="text-gray-700 hover:text-amber-900 transition"
-            >
-              {t('nav.contact')}
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="text-gray-700 hover:text-amber-900 transition"
+              >
+                {item.label}
+              </Link>
+            ))}
           </nav>
 
           <div className="flex items-center space-x-4">
-            {/* User Menu */}
             {user ? (
               <div className="relative">
                 <button
+                  type="button"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition"
                 >
@@ -125,11 +126,11 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                     <div
                       className="fixed inset-0 z-10"
                       onClick={() => setUserMenuOpen(false)}
-                    ></div>
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-20">
+                    />
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg py-2 z-20">
                       <div className="px-4 py-2 border-b">
-                        <p className="text-sm text-gray-900">{user.name}</p>
-                        <p className="text-xs text-gray-500">{user.email}</p>
+                        <p className="text-sm text-gray-900 truncate">{user.name}</p>
+                        <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </div>
                       <Link
                         href="/profile"
@@ -140,6 +141,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                         {locale === 'vi' ? 'Đơn hàng của tôi' : 'My Orders'}
                       </Link>
                       <button
+                        type="button"
                         onClick={handleLogout}
                         className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t"
                       >
@@ -152,6 +154,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
               </div>
             ) : (
               <button
+                type="button"
                 onClick={onAuthClick}
                 className="hidden md:flex items-center gap-2 px-4 py-2 text-amber-900 hover:bg-amber-50 rounded-lg transition"
               >
@@ -160,9 +163,9 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
               </button>
             )}
 
-            {/* Language Selector */}
             <div className="relative">
               <button
+                type="button"
                 onClick={() => setLangMenuOpen(!langMenuOpen)}
                 className="flex items-center gap-2 p-2 hover:bg-gray-100 rounded-lg transition"
               >
@@ -177,9 +180,10 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                   <div
                     className="fixed inset-0 z-10"
                     onClick={() => setLangMenuOpen(false)}
-                  ></div>
+                  />
                   <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg py-2 z-20">
                     <button
+                      type="button"
                       onClick={() => handleLanguageChange('vi')}
                       className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition ${
                         locale === 'vi'
@@ -190,6 +194,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                       Tiếng Việt
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleLanguageChange('en')}
                       className={`w-full text-left px-4 py-2 hover:bg-gray-100 transition ${
                         locale === 'en'
@@ -217,6 +222,7 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
             </Link>
 
             <button
+              type="button"
               onClick={onCartClick}
               className="relative p-2 hover:bg-gray-100 rounded-lg transition"
             >
@@ -228,8 +234,8 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
               )}
             </button>
 
-            {/* Mobile Menu Button */}
             <button
+              type="button"
               className="md:hidden p-2 hover:bg-gray-100 rounded-lg"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             >
@@ -242,39 +248,21 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
           </div>
         </div>
 
-        {/* Mobile Menu */}
         {mobileMenuOpen && (
           <nav className="md:hidden py-4 border-t">
-            <Link
-              href="/#home"
-              className="block py-2 text-gray-700 hover:text-amber-900 transition"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('nav.home')}
-            </Link>
-            <Link
-              href="/#products"
-              className="block py-2 text-gray-700 hover:text-amber-900 transition"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('nav.products')}
-            </Link>
-            <Link
-              href="/#about"
-              className="block py-2 text-gray-700 hover:text-amber-900 transition"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('nav.about')}
-            </Link>
-            <Link
-              href="/#contact"
-              className="block py-2 text-gray-700 hover:text-amber-900 transition"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {t('nav.contact')}
-            </Link>
+            {navItems.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                className="block py-2 text-gray-700 hover:text-amber-900 transition"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                {item.label}
+              </Link>
+            ))}
             {!user && (
               <button
+                type="button"
                 onClick={() => {
                   onAuthClick();
                   setMobileMenuOpen(false);

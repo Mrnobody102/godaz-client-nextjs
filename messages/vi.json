@@ -3,21 +3,21 @@
     "title": "Thủ Công Mỹ Nghệ Việt Nam",
     "cart": "Giỏ hàng",
     "signin": "Đăng nhập",
-    "logout": "Đăng Xuất",
+    "logout": "Đăng xuất",
     "nav": {
-      "home": "Trang Chủ",
-      "products": "Sản Phẩm",
-      "about": "Giới Thiệu",
-      "contact": "Liên Hệ"
+      "home": "Trang chủ",
+      "products": "Sản phẩm",
+      "about": "Giới thiệu",
+      "contact": "Liên hệ"
     }
   },
   "hero": {
     "title": "Thủ Công Mỹ Nghệ Việt Nam",
-    "subtitle": "Khám phá vẻ đẹp truyền thống qua những sản phẩm gỗ",
-    "cta": "Khám Phá Ngay",
+    "subtitle": "Khám phá vẻ đẹp truyền thống qua những sản phẩm thủ công tinh xảo",
+    "cta": "Khám phá ngay",
     "ctas": {
-      "view_products": "Xem Sản Phẩm",
-      "contact": "Liên Hệ"
+      "view_products": "Xem sản phẩm",
+      "contact": "Liên hệ"
     }
   },
   "auth": {
@@ -57,20 +57,20 @@
   "home": {
     "products": {
       "title": "Sản Phẩm Thủ Công Mỹ Nghệ",
-      "description": "Những sản phẩm thủ công tinh xảo được làm bằng tay từ nghệ nhân lành nghề"
+      "description": "Những sản phẩm tinh xảo được làm bằng tay bởi các nghệ nhân lành nghề"
     },
     "features": {
       "f1_title": "100% Thủ Công",
       "f1_desc": "Sản phẩm được làm hoàn toàn bằng tay bởi nghệ nhân lành nghề",
       "f2_title": "Độc Đáo",
       "f2_desc": "Mỗi sản phẩm đều có nét riêng, mang đậm dấu ấn văn hóa Việt",
-      "f3_title": "Thân Thiện Môi Trường",
-      "f3_desc": "Sử dụng nguyên liệu tự nhiên, an toàn và bền vững"
+      "f3_title": "Bền Vững",
+      "f3_desc": "Sử dụng nguyên liệu tự nhiên, an toàn và thân thiện môi trường"
     },
     "about": {
       "title": "Về Chúng Tôi",
-      "p1": "Chúng tôi là đơn vị chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống Việt Nam.",
-      "p2": "Với đội ngũ nghệ nhân tâm huyết, chúng tôi cam kết mang đến những sản phẩm chất lượng cao, bền đẹp và đậm chất văn hóa dân tộc."
+      "p1": "Chúng tôi chuyên cung cấp các sản phẩm thủ công mỹ nghệ truyền thống Việt Nam.",
+      "p2": "Với đội ngũ nghệ nhân tâm huyết, chúng tôi cam kết mang đến sản phẩm chất lượng cao, bền đẹp và đậm chất văn hóa dân tộc."
     }
   },
   "footer": {
@@ -79,10 +79,10 @@
     "about": {
       "title": "Về Chúng Tôi",
       "links": {
-        "intro": "Giới Thiệu",
-        "services": "Dịch Vụ",
-        "policies": "Chính Sách",
-        "partners": "Đối Tác"
+        "intro": "Giới thiệu",
+        "services": "Dịch vụ",
+        "policies": "Chính sách",
+        "partners": "Đối tác"
       }
     },
     "contact": {
@@ -95,7 +95,10 @@
   },
   "product": {
     "add": "Thêm",
-    "price_per": "{price}₫ /{unit}"
+    "price_per": "{price}₫ /{unit}",
+    "soldOut": "Hết hàng",
+    "stockLimit": "Không còn đủ tồn kho",
+    "addedToCart": "Đã thêm {name} vào giỏ hàng"
   },
   "cart": {
     "title": "Giỏ Hàng",
@@ -105,31 +108,47 @@
     "total": "Tổng cộng:",
     "checkout": "Đặt Hàng",
     "continueShopping": "Tiếp tục mua sắm",
-    "addToCartSuccess": "Đã thêm vào giỏ hàng"
+    "addToCartSuccess": "Đã thêm vào giỏ hàng",
+    "stock": "Tồn kho: {stock}"
   },
   "productDetail": {
-    "backToHome": "Quay lại Trang chủ",
+    "backToHome": "Quay lại trang chủ",
     "addToCart": "Thêm vào giỏ hàng",
     "category": "Danh mục:",
     "description": "Mô tả sản phẩm",
     "notFound": "Không tìm thấy sản phẩm",
     "price_per": "{price}₫ /{unit}",
-    "related": "Sản phẩm liên quan"
+    "related": "Sản phẩm liên quan",
+    "stockLimit": "Không còn đủ tồn kho",
+    "addedToCart": "Đã thêm {name} vào giỏ hàng"
   },
   "search": {
     "placeholder": "Tìm kiếm sản phẩm...",
     "all": "Tất cả danh mục",
     "noResults": "Không tìm thấy sản phẩm nào.",
+    "filters": "Bộ lọc",
+    "clearFilters": "Xóa bộ lọc",
     "sort": "Sắp xếp theo",
     "sortNewest": "Mới nhất",
-    "sortPriceAsc": "Giá: Thấp đến Cao",
-    "sortPriceDesc": "Giá: Cao đến Thấp"
+    "sortPriceAsc": "Giá: Thấp đến cao",
+    "sortPriceDesc": "Giá: Cao đến thấp",
+    "minPrice": "Giá từ",
+    "maxPrice": "Giá đến",
+    "inStock": "Còn hàng",
+    "featured": "Nổi bật",
+    "pageSize": "{size} / trang",
+    "resultCount": "{count} sản phẩm",
+    "pageOf": "Trang {page} / {totalPages}",
+    "previous": "Trang trước",
+    "next": "Trang sau",
+    "offlineFallback": "Đang dùng dữ liệu demo cục bộ",
+    "invalidPriceRange": "Giá từ không được lớn hơn giá đến."
   },
   "checkout": {
     "title": "Thanh Toán",
     "shipping": "Thông tin giao hàng",
     "payment": "Phương thức thanh toán",
-    "name": "Họ và Tên",
+    "name": "Họ và tên",
     "phone": "Số điện thoại",
     "address": "Địa chỉ giao hàng",
     "placeOrder": "Đặt Hàng",
@@ -141,7 +160,7 @@
     "continueShopping": "Tiếp tục mua sắm"
   },
   "wishlist": {
-    "title": "Sản phẩm Yêu thích",
+    "title": "Sản phẩm yêu thích",
     "empty": "Danh sách yêu thích đang trống",
     "add": "Đã thêm vào danh sách yêu thích",
     "remove": "Đã xóa khỏi danh sách yêu thích"

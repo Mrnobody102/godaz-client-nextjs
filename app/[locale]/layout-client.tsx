@@ -7,10 +7,10 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import queryClient from '@/lib/queryClient';
 
 const hashTitleMap: Record<string, string> = {
-  '#home': 'Trang Chủ',
-  '#products': 'Sản Phẩm',
-  '#about': 'Giới Thiệu',
-  '#contact': 'Liên Hệ',
+  '#home': 'Trang chủ',
+  '#products': 'Sản phẩm',
+  '#about': 'Giới thiệu',
+  '#contact': 'Liên hệ',
 };
 
 export function LayoutClient({ children }: { children: ReactNode }) {

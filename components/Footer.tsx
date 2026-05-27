@@ -22,7 +22,7 @@ export function Footer() {
             <p className="text-gray-400">{t('description')}</p>
           </div>
 
-          <div id="about">
+          <div>
             <h3 className="mb-4">{t('about.title')}</h3>
             <ul className="space-y-2 text-gray-400">
               <li>

@@ -1,4 +1,3 @@
-import { notFound } from 'next/navigation';
 import { handicraftProducts } from '@/lib/constants/products';
 import ProductDetailClient from './ProductDetailClient';
 
@@ -7,12 +6,9 @@ interface Props {
 }
 
 export default async function ProductPage({ params }: Props) {
-  const resolvedParams = await params;
-  const product = handicraftProducts.find((p) => String(p.id) === resolvedParams.id);
+  const { id } = await params;
+  const initialProduct =
+    handicraftProducts.find((product) => String(product.id) === id) || null;
 
-  if (!product) {
-    notFound();
-  }
-
-  return <ProductDetailClient product={product} />;
+  return <ProductDetailClient productId={id} initialProduct={initialProduct} />;
 }

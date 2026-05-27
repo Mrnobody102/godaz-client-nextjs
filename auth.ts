@@ -2,7 +2,7 @@
 // Replace with real NextAuth handlers or your auth implementation as needed.
 
 export const handlers = {
-  GET: async (req: Request) => {
+  GET: async () => {
     return new Response(
       JSON.stringify({ message: 'Auth handler not implemented' }),
       {
@@ -11,7 +11,7 @@ export const handlers = {
       }
     );
   },
-  POST: async (req: Request) => {
+  POST: async () => {
     return new Response(
       JSON.stringify({ message: 'Auth handler not implemented' }),
       {
