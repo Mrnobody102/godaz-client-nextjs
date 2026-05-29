@@ -20,6 +20,7 @@ import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import { Product, handicraftProducts } from '@/lib/constants/products';
 import { ProductCard } from '@/components/ProductCard';
+import { ProductReviews } from '@/components/ProductReviews';
 import { Link } from '@/i18n/routing';
 import useCartStore from '@/stores/cartStore';
 import useWishlistStore from '@/stores/wishlistStore';
@@ -328,6 +329,11 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                 </div>
               </div>
             </div>
+
+            <ProductReviews
+              productId={product.id}
+              onRequireAuth={() => setIsAuthModalOpen(true)}
+            />
 
             {relatedProducts.length > 0 && (
               <div className="mt-20">

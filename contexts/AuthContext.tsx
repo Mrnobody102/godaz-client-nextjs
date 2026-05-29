@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
   AuthUser,
+  googleLoginRequest,
   isNetworkError,
   loginRequest,
   registerRequest,
@@ -14,6 +15,7 @@ interface User {
   email: string;
   username?: string;
   role?: string;
+  avatarUrl?: string | null;
 }
 
 interface StoredUser extends User {
@@ -23,6 +25,7 @@ interface StoredUser extends User {
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
+  loginWithGoogle: (idToken: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
   isLoading: boolean;
@@ -37,6 +40,7 @@ function toUser(user: AuthUser): User {
     email: user.email,
     username: user.username,
     role: user.role,
+    avatarUrl: user.avatarUrl,
   };
 }
 
@@ -108,6 +112,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const loginWithGoogle = async (idToken: string): Promise<boolean> => {
+    try {
+      const response = await googleLoginRequest(idToken);
+      persistSession(toUser(response.user), response.token);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   const registerWithLocalStorage = async (
     name: string,
     email: string,
@@ -162,7 +176,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

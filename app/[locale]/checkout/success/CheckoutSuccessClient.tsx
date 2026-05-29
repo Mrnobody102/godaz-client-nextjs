@@ -3,7 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useTranslations } from 'next-intl';
 import { useSearchParams } from 'next/navigation';
-import { CheckCircle2, ArrowRight } from 'lucide-react';
+import { AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Cart } from '@/components/Cart';
@@ -15,15 +15,29 @@ function SuccessContent() {
   const t = useTranslations('checkout');
   const searchParams = useSearchParams();
   const orderId = searchParams.get('orderId') || 'UNKNOWN';
+  const paymentStatus = searchParams.get('paymentStatus');
+  const isFailedPayment = paymentStatus === 'failed' || paymentStatus === 'cancelled';
 
   return (
     <div className="max-w-2xl mx-auto text-center py-20 px-4">
-      <div className="inline-flex items-center justify-center w-24 h-24 bg-green-100 rounded-full mb-8">
-        <CheckCircle2 className="w-12 h-12 text-green-600" />
+      <div
+        className={`inline-flex items-center justify-center w-24 h-24 rounded-full mb-8 ${
+          isFailedPayment ? 'bg-red-100' : 'bg-green-100'
+        }`}
+      >
+        {isFailedPayment ? (
+          <AlertCircle className="w-12 h-12 text-red-600" />
+        ) : (
+          <CheckCircle2 className="w-12 h-12 text-green-600" />
+        )}
       </div>
-      <h1 className="text-4xl font-extrabold text-gray-900 mb-4">{t('successTitle')}</h1>
+      <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
+        {isFailedPayment ? 'Payment was not completed' : t('successTitle')}
+      </h1>
       <p className="text-xl text-gray-600 mb-12">
-        {t('successDesc', { orderId })}
+        {isFailedPayment
+          ? `Order #${orderId} is still pending. Please try another payment method or contact support.`
+          : t('successDesc', { orderId })}
       </p>
       <Link
         href="/"

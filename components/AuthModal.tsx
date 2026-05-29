@@ -1,9 +1,38 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import Script from 'next/script';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { X, Mail, Lock, User, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTranslations } from 'next-intl';
+
+interface GoogleCredentialResponse {
+  credential?: string;
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: {
+            client_id: string;
+            callback: (response: GoogleCredentialResponse) => void;
+          }) => void;
+          renderButton: (
+            element: HTMLElement,
+            options: {
+              theme: string;
+              size: string;
+              width: number;
+              text: string;
+            }
+          ) => void;
+        };
+      };
+    };
+  }
+}
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -23,10 +52,13 @@ export function AuthModal({
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleReady, setIsGoogleReady] = useState(false);
 
   const t = useTranslations('auth');
-  const { login, register } = useAuth();
+  const { login, loginWithGoogle, register } = useAuth();
   const previousTitleRef = useRef<string | null>(null);
+  const googleButtonRef = useRef<HTMLDivElement | null>(null);
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
 
   useEffect(() => {
     if (isOpen) {
@@ -42,19 +74,19 @@ export function AuthModal({
     }
   }, [isOpen, mode, t]);
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setName('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
     setError('');
     setIsLoading(false);
-  };
+  }, []);
 
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     resetForm();
     onClose();
-  };
+  }, [onClose, resetForm]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,6 +133,47 @@ export function AuthModal({
     }
   };
 
+  const handleGoogleCredential = useCallback(
+    async (response: GoogleCredentialResponse) => {
+      if (!response.credential) {
+        setError(t('errors.generic'));
+        return;
+      }
+
+      setError('');
+      setIsLoading(true);
+      try {
+        const success = await loginWithGoogle(response.credential);
+        if (success) {
+          handleClose();
+        } else {
+          setError(t('errors.generic'));
+        }
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [handleClose, loginWithGoogle, t]
+  );
+
+  useEffect(() => {
+    if (!isOpen || !googleClientId || !isGoogleReady || !window.google || !googleButtonRef.current) {
+      return;
+    }
+
+    googleButtonRef.current.innerHTML = '';
+    window.google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleGoogleCredential,
+    });
+    window.google.accounts.id.renderButton(googleButtonRef.current, {
+      theme: 'outline',
+      size: 'large',
+      width: 352,
+      text: mode === 'login' ? 'signin_with' : 'signup_with',
+    });
+  }, [googleClientId, handleGoogleCredential, isGoogleReady, isOpen, mode]);
+
   const switchMode = () => {
     setMode(mode === 'login' ? 'register' : 'login');
     setError('');
@@ -110,6 +183,14 @@ export function AuthModal({
 
   return (
     <>
+      {googleClientId && (
+        <Script
+          src="https://accounts.google.com/gsi/client"
+          strategy="afterInteractive"
+          onLoad={() => setIsGoogleReady(true)}
+        />
+      )}
+
       <div
         className="fixed inset-0 bg-black/50 z-50"
         onClick={handleClose}
@@ -233,6 +314,22 @@ export function AuthModal({
                 : t('register')}
           </button>
         </form>
+
+        {googleClientId && (
+          <div className="mt-5">
+            <div className="relative mb-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-gray-200" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white px-2 text-gray-500">
+                  {t('continue_with')}
+                </span>
+              </div>
+            </div>
+            <div className="flex justify-center" ref={googleButtonRef} />
+          </div>
+        )}
 
         <div className="mt-6 text-center">
           <p className="text-gray-600">

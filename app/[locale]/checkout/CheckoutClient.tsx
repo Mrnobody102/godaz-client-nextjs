@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
@@ -11,7 +11,14 @@ import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
 import { Link } from '@/i18n/routing';
 import useOrderStore, { Order } from '@/stores/orderStore';
-import { createOrder, getApiErrorMessage, isNetworkError } from '@/lib/api';
+import {
+  createOrder,
+  createPayment,
+  fetchPaymentGateways,
+  getApiErrorMessage,
+  isNetworkError,
+  PaymentGatewayAvailability,
+} from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 function isValidPhone(phone: string) {
@@ -31,6 +38,7 @@ export default function CheckoutClient() {
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
   const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayAvailability[]>([]);
 
   const { items: cartItems, clearCart, updateQuantity, removeItem } = useCartStore();
   const { addOrder } = useOrderStore();
@@ -44,6 +52,28 @@ export default function CheckoutClient() {
     (item) => typeof item.stock === 'number' && item.quantity > item.stock
   );
   const hasStockIssue = stockIssues.length > 0;
+  const gatewayEnabled = useMemo(
+    () =>
+      paymentGateways.reduce<Record<string, boolean>>((result, gateway) => {
+        result[gateway.gateway] = gateway.enabled;
+        return result;
+      }, {}),
+    [paymentGateways]
+  );
+
+  useEffect(() => {
+    let active = true;
+    fetchPaymentGateways()
+      .then((gateways) => {
+        if (active) setPaymentGateways(gateways);
+      })
+      .catch(() => {
+        if (active) setPaymentGateways([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
@@ -68,6 +98,16 @@ export default function CheckoutClient() {
     if (cartItems.length === 0 || isSubmitting) return;
 
     setError('');
+
+    if (paymentMethod !== 'cod' && !user) {
+      setError(
+        locale === 'vi'
+          ? 'Vui long dang nhap de thanh toan truc tuyen.'
+          : 'Please sign in to use online payment.'
+      );
+      setIsAuthModalOpen(true);
+      return;
+    }
 
     if (hasStockIssue) {
       setError(
@@ -120,6 +160,14 @@ export default function CheckoutClient() {
 
       if (!nextOrder) {
         nextOrder = createLocalOrder(customer);
+      }
+
+      if (paymentMethod === 'vnpay' || paymentMethod === 'momo') {
+        const payment = await createPayment(nextOrder.id, paymentMethod);
+        addOrder(nextOrder);
+        clearCart();
+        window.location.href = payment.paymentUrl;
+        return;
       }
 
       addOrder(nextOrder);
@@ -233,12 +281,19 @@ export default function CheckoutClient() {
                 <div className="space-y-4">
                   {[
                     ['cod', t('cod')],
-                    ['banking', t('banking')],
+                    ['vnpay', t('banking')],
                     ['momo', t('momo')],
-                  ].map(([value, label]) => (
+                  ].map(([value, label]) => {
+                    const isOnlineGateway = value === 'vnpay' || value === 'momo';
+                    const isDisabled =
+                      isOnlineGateway && (!gatewayEnabled[value] || !user);
+
+                    return (
                     <label
                       key={value}
-                      className={`flex items-center p-4 border rounded-xl cursor-pointer transition-colors ${
+                      className={`flex items-center p-4 border rounded-xl transition-colors ${
+                        isDisabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'
+                      } ${
                         paymentMethod === value
                           ? 'border-amber-900 bg-amber-50'
                           : 'border-gray-200'
@@ -249,12 +304,21 @@ export default function CheckoutClient() {
                         name="payment"
                         value={value}
                         checked={paymentMethod === value}
+                        disabled={isDisabled}
                         onChange={() => setPaymentMethod(value)}
                         className="h-4 w-4 text-amber-900 focus:ring-amber-900"
                       />
-                      <span className="ml-3 font-medium text-gray-900">{label}</span>
+                      <span className="ml-3 font-medium text-gray-900">
+                        {label}
+                        {isOnlineGateway && !gatewayEnabled[value] && (
+                          <span className="ml-2 text-xs text-gray-500">
+                            {locale === 'vi' ? '(chua cau hinh)' : '(not configured)'}
+                          </span>
+                        )}
+                      </span>
                     </label>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </form>

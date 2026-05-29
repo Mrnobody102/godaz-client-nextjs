@@ -25,6 +25,13 @@ import {
 
 const DEFAULT_PAGE_SIZE = 12;
 const PAGE_SIZE_OPTIONS = [12, 24, 48];
+const PRICE_RANGE_MAX = 1000000;
+const PRICE_RANGE_STEP = 50000;
+const PRICE_PRESETS = [
+  { label: '< 200k', min: '', max: '200000' },
+  { label: '200k - 400k', min: '200000', max: '400000' },
+  { label: '400k+', min: '400000', max: '' },
+];
 
 interface CategoryOption {
   label: string;
@@ -58,9 +65,16 @@ function parsePageSizeParam(value: string | null) {
 
 function parseMoneyInput(value: string | null) {
   if (!value) return '';
-  const parsed = Number(value);
+  const parsed = Number(value.replace(/\D/g, ''));
   if (!Number.isFinite(parsed) || parsed < 0) return '';
   return String(Math.floor(parsed));
+}
+
+function formatMoneyInput(value: string) {
+  if (!value) return '';
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return '';
+  return new Intl.NumberFormat('vi-VN').format(parsed);
 }
 
 function moneyFilter(value: string) {
@@ -419,6 +433,15 @@ export default function HomeClient() {
 
   const resetToFirstPage = () => setPage(0);
 
+  const applyPricePreset = (preset: (typeof PRICE_PRESETS)[number]) => {
+    setMinPrice(preset.min);
+    setMaxPrice(preset.max);
+    resetToFirstPage();
+  };
+
+  const currentSliderMin = Math.min(minPriceNumber ?? 0, PRICE_RANGE_MAX);
+  const currentSliderMax = Math.min(maxPriceNumber ?? PRICE_RANGE_MAX, PRICE_RANGE_MAX);
+
   const clearFilters = () => {
     setSearchQuery('');
     setDebouncedSearch('');
@@ -544,31 +567,90 @@ export default function HomeClient() {
                   <option value="price-desc">{tSearch('sortPriceDesc')}</option>
                 </select>
 
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
-                  placeholder={tSearch('minPrice')}
-                  value={minPrice}
-                  onChange={(event) => {
-                    setMinPrice(event.target.value);
-                    resetToFirstPage();
-                  }}
-                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
-                />
+                <div className="rounded-xl border border-gray-300 bg-white p-3 sm:col-span-2 lg:col-span-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <label className="text-xs font-medium text-gray-500">
+                      {tSearch('minPrice')}
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="0"
+                        value={formatMoneyInput(minPrice)}
+                        onChange={(event) => {
+                          setMinPrice(parseMoneyInput(event.target.value));
+                          resetToFirstPage();
+                        }}
+                        className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-900"
+                      />
+                    </label>
 
-                <input
-                  type="number"
-                  min="0"
-                  inputMode="numeric"
-                  placeholder={tSearch('maxPrice')}
-                  value={maxPrice}
-                  onChange={(event) => {
-                    setMaxPrice(event.target.value);
-                    resetToFirstPage();
-                  }}
-                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
-                />
+                    <label className="text-xs font-medium text-gray-500">
+                      {tSearch('maxPrice')}
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="1.000.000"
+                        value={formatMoneyInput(maxPrice)}
+                        onChange={(event) => {
+                          setMaxPrice(parseMoneyInput(event.target.value));
+                          resetToFirstPage();
+                        }}
+                        className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-900"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-3 space-y-2">
+                    <div className="relative h-6">
+                      <input
+                        type="range"
+                        min="0"
+                        max={PRICE_RANGE_MAX}
+                        step={PRICE_RANGE_STEP}
+                        value={currentSliderMin}
+                        onChange={(event) => {
+                          const nextMin = Math.min(Number(event.target.value), currentSliderMax);
+                          setMinPrice(nextMin === 0 ? '' : String(nextMin));
+                          resetToFirstPage();
+                        }}
+                        className="absolute inset-x-0 top-1 h-2 w-full accent-amber-900"
+                      />
+                      <input
+                        type="range"
+                        min="0"
+                        max={PRICE_RANGE_MAX}
+                        step={PRICE_RANGE_STEP}
+                        value={currentSliderMax}
+                        onChange={(event) => {
+                          const nextMax = Math.max(Number(event.target.value), currentSliderMin);
+                          setMaxPrice(nextMax === PRICE_RANGE_MAX ? '' : String(nextMax));
+                          resetToFirstPage();
+                        }}
+                        className="absolute inset-x-0 top-3 h-2 w-full accent-amber-700"
+                      />
+                    </div>
+
+                    <div className="flex flex-wrap gap-2">
+                      {PRICE_PRESETS.map((preset) => {
+                        const active = minPrice === preset.min && maxPrice === preset.max;
+                        return (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => applyPricePreset(preset)}
+                            className={`rounded-full border px-3 py-1 text-xs font-medium ${
+                              active
+                                ? 'border-amber-900 bg-amber-900 text-white'
+                                : 'border-gray-200 text-gray-600 hover:bg-amber-50'
+                            }`}
+                          >
+                            {preset.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
 
                 <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
                   <input

@@ -28,6 +28,7 @@ export interface AuthUser {
   username: string;
   email: string;
   role: string;
+  avatarUrl?: string | null;
 }
 
 export interface LoginResponse {
@@ -78,6 +79,41 @@ export interface CheckoutPayload {
   paymentMethod: string;
 }
 
+export interface PaymentGatewayAvailability {
+  gateway: 'vnpay' | 'momo' | string;
+  enabled: boolean;
+}
+
+export interface CreatePaymentResponse {
+  paymentId: string;
+  orderId: string;
+  gateway: string;
+  status: string;
+  amount: number | string;
+  paymentUrl: string;
+}
+
+export interface ProductReview {
+  id: string;
+  productId: number;
+  userId: string;
+  userName: string;
+  rating?: number | null;
+  content: string;
+  edited: boolean;
+  mine: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductReviewPageResponse {
+  reviews: ProductReview[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
 interface ApiOrderItem {
   productId: number;
   name: string;
@@ -97,6 +133,14 @@ interface ApiOrderResponse {
   status: Order['status'];
   customer: Order['customer'];
   paymentMethod: string;
+}
+
+interface ApiOrderPageResponse {
+  orders: ApiOrderResponse[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
 }
 
 export function isNetworkError(error: unknown) {
@@ -122,6 +166,13 @@ export async function loginRequest(username: string, password: string) {
   const { data } = await api.post<LoginResponse>('/login', {
     username,
     password,
+  });
+  return data;
+}
+
+export async function googleLoginRequest(idToken: string) {
+  const { data } = await api.post<LoginResponse>('/login/google', {
+    idToken,
   });
   return data;
 }
@@ -168,14 +219,68 @@ export async function fetchProduct(id: string | number) {
   return data;
 }
 
+export async function fetchProductReviews(productId: string | number, page = 0, size = 5) {
+  const { data } = await api.get<ProductReviewPageResponse>(
+    `/api/products/${productId}/reviews`,
+    {
+      params: { page, size },
+    }
+  );
+  return data;
+}
+
+export async function createProductReview(
+  productId: string | number,
+  payload: { rating?: number | null; content: string }
+) {
+  const { data } = await api.post<ProductReview>(
+    `/api/products/${productId}/reviews`,
+    payload
+  );
+  return data;
+}
+
+export async function updateProductReview(
+  reviewId: string,
+  payload: { rating?: number | null; content: string }
+) {
+  const { data } = await api.put<ProductReview>(`/api/reviews/${reviewId}`, payload);
+  return data;
+}
+
+export async function deleteProductReview(reviewId: string) {
+  await api.delete(`/api/reviews/${reviewId}`);
+}
+
 export async function createOrder(payload: CheckoutPayload) {
   const { data } = await api.post<ApiOrderResponse>('/api/orders', payload);
   return toOrder(data);
 }
 
-export async function fetchMyOrders() {
-  const { data } = await api.get<ApiOrderResponse[]>('/api/orders/my');
-  return data.map(toOrder);
+export async function fetchPaymentGateways() {
+  const { data } = await api.get<PaymentGatewayAvailability[]>('/api/payments/gateways');
+  return data;
+}
+
+export async function createPayment(orderId: string, gateway: 'vnpay' | 'momo') {
+  const { data } = await api.post<CreatePaymentResponse>('/api/payments', {
+    orderId,
+    gateway,
+  });
+  return data;
+}
+
+export async function fetchMyOrders(page = 0, size = 10) {
+  const { data } = await api.get<ApiOrderPageResponse>('/api/orders/my', {
+    params: { page, size },
+  });
+  return {
+    orders: data.orders.map(toOrder),
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+    page: data.page,
+    size: data.size,
+  };
 }
 
 function toOrder(order: ApiOrderResponse): Order {

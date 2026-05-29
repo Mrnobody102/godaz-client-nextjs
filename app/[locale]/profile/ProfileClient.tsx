@@ -31,6 +31,8 @@ export default function ProfileClient() {
   const [displayedOrders, setDisplayedOrders] = useState<Order[]>([]);
   const [isLoadingOrders, setIsLoadingOrders] = useState(false);
   const [statusFilter, setStatusFilter] = useState<Order['status'] | 'all'>('all');
+  const [ordersPage, setOrdersPage] = useState(0);
+  const [ordersTotalPages, setOrdersTotalPages] = useState(0);
 
   const { items: cartItems, updateQuantity, removeItem } = useCartStore();
   const { orders } = useOrderStore();
@@ -47,9 +49,10 @@ export default function ProfileClient() {
       }
 
       try {
-        const remoteOrders = await fetchMyOrders();
+        const remoteOrders = await fetchMyOrders(ordersPage, 10);
         if (!ignore) {
-          setDisplayedOrders(remoteOrders);
+          setDisplayedOrders(remoteOrders.orders);
+          setOrdersTotalPages(remoteOrders.totalPages);
         }
       } catch {
         if (!ignore) {
@@ -67,7 +70,7 @@ export default function ProfileClient() {
     return () => {
       ignore = true;
     };
-  }, [orders, user]);
+  }, [orders, ordersPage, user]);
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -293,6 +296,31 @@ export default function ProfileClient() {
                 </div>
               </div>
             ))}
+            {user && ordersTotalPages > 1 && (
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={ordersPage <= 0 || isLoadingOrders}
+                  onClick={() => setOrdersPage((current) => Math.max(0, current - 1))}
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {locale === 'vi' ? 'Truoc' : 'Previous'}
+                </button>
+                <span className="text-sm text-gray-500">
+                  {ordersPage + 1} / {ordersTotalPages}
+                </span>
+                <button
+                  type="button"
+                  disabled={ordersPage + 1 >= ordersTotalPages || isLoadingOrders}
+                  onClick={() =>
+                    setOrdersPage((current) => Math.min(ordersTotalPages - 1, current + 1))
+                  }
+                  className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {locale === 'vi' ? 'Sau' : 'Next'}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </main>
