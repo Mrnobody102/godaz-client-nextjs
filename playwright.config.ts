@@ -9,8 +9,8 @@ export default defineConfig({
       maxDiffPixelRatio: 0.02,
     },
   },
-  fullyParallel: true,
-  retries: process.env.CI ? 2 : 0,
+  fullyParallel: false,
+  retries: process.env.CI ? 2 : 1,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:3000',
