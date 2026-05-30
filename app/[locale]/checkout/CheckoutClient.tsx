@@ -6,7 +6,6 @@ import { useRouter } from '@/i18n/routing';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { toast } from 'react-hot-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
