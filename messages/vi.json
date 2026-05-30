@@ -142,7 +142,9 @@
     "previous": "Trang trước",
     "next": "Trang sau",
     "offlineFallback": "Đang dùng dữ liệu demo cục bộ",
-    "invalidPriceRange": "Giá từ không được lớn hơn giá đến."
+    "invalidPriceRange": "Giá từ không được lớn hơn giá đến.",
+    "apply": "Áp dụng",
+    "removeFilter": "Xóa bộ lọc này"
   },
   "checkout": {
     "title": "Thanh Toán",
