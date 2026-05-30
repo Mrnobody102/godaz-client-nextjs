@@ -158,6 +158,9 @@
     "momo": "Momo E-Wallet",
     "successTitle": "Order Placed Successfully!",
     "successDesc": "Your order #{orderId} has been confirmed. We will contact you shortly.",
+    "paymentFailedTitle": "Payment was not completed",
+    "paymentFailedDesc": "Order #{orderId} is still pending payment. Please try another payment method or contact support.",
+    "loading": "Loading...",
     "continueShopping": "Continue Shopping"
   },
   "wishlist": {

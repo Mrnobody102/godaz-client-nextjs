@@ -32,11 +32,11 @@ function SuccessContent() {
         )}
       </div>
       <h1 className="text-4xl font-extrabold text-gray-900 mb-4">
-        {isFailedPayment ? 'Payment was not completed' : t('successTitle')}
+        {isFailedPayment ? t('paymentFailedTitle') : t('successTitle')}
       </h1>
       <p className="text-xl text-gray-600 mb-12">
         {isFailedPayment
-          ? `Order #${orderId} is still pending. Please try another payment method or contact support.`
+          ? t('paymentFailedDesc', { orderId })
           : t('successDesc', { orderId })}
       </p>
       <Link
@@ -51,6 +51,7 @@ function SuccessContent() {
 }
 
 export default function CheckoutSuccessClient() {
+  const t = useTranslations('checkout');
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { items: cartItems, updateQuantity, removeItem } = useCartStore();
@@ -74,7 +75,7 @@ export default function CheckoutSuccessClient() {
       />
 
       <main className="flex-1 w-full">
-        <Suspense fallback={<div className="py-20 text-center">Loading...</div>}>
+        <Suspense fallback={<div className="py-20 text-center">{t('loading')}</div>}>
           <SuccessContent />
         </Suspense>
       </main>

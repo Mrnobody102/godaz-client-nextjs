@@ -159,6 +159,9 @@
     "momo": "Ví điện tử Momo",
     "successTitle": "Đặt hàng thành công!",
     "successDesc": "Đơn hàng #{orderId} của bạn đã được xác nhận. Chúng tôi sẽ liên hệ với bạn sớm nhất.",
+    "paymentFailedTitle": "Thanh toán chưa hoàn tất",
+    "paymentFailedDesc": "Đơn hàng #{orderId} vẫn đang chờ thanh toán. Vui lòng thử phương thức khác hoặc liên hệ hỗ trợ.",
+    "loading": "Đang tải...",
     "continueShopping": "Tiếp tục mua sắm"
   },
   "wishlist": {
