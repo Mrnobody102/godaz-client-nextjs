@@ -6,6 +6,8 @@ import { useRouter } from '@/i18n/routing';
 import { AlertCircle, ArrowLeft } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { toast } from 'react-hot-toast';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
@@ -372,51 +374,60 @@ export default function CheckoutClient() {
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('province')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
                       </label>
-                      <select
+                      <Select
                         required
                         value={formData.province}
-                        onChange={(e) => setFormData({ ...formData, province: e.target.value, district: '', ward: '' })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white"
+                        onValueChange={(val) => setFormData({ ...formData, province: val, district: '', ward: '' })}
                       >
-                        <option value="">{t('selectProvince')}</option>
-                        {provinces.map((p) => (
-                          <option key={p.code} value={p.name}>{p.name}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white h-[42px]">
+                          <SelectValue placeholder={t('selectProvince')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {provinces.map((p) => (
+                            <SelectItem key={p.code} value={p.name}>{p.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('district')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
                       </label>
-                      <select
+                      <Select
                         required
                         disabled={!formData.province}
                         value={formData.district}
-                        onChange={(e) => setFormData({ ...formData, district: e.target.value, ward: '' })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100"
+                        onValueChange={(val) => setFormData({ ...formData, district: val, ward: '' })}
                       >
-                        <option value="">{t('selectDistrict')}</option>
-                        {districts.map((d) => (
-                          <option key={d.code} value={d.name}>{d.name}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100 h-[42px]">
+                          <SelectValue placeholder={t('selectDistrict')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {districts.map((d) => (
+                            <SelectItem key={d.code} value={d.name}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('ward')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
                       </label>
-                      <select
+                      <Select
                         required
                         disabled={!formData.district}
                         value={formData.ward}
-                        onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100"
+                        onValueChange={(val) => setFormData({ ...formData, ward: val })}
                       >
-                        <option value="">{t('selectWard')}</option>
-                        {wards.map((w) => (
-                          <option key={w.code} value={w.name}>{w.name}</option>
-                        ))}
-                      </select>
+                        <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100 h-[42px]">
+                          <SelectValue placeholder={t('selectWard')} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {wards.map((w) => (
+                            <SelectItem key={w.code} value={w.name}>{w.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
 
