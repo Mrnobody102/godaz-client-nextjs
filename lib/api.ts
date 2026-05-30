@@ -75,6 +75,8 @@ export interface CheckoutPayload {
     name: string;
     phone: string;
     address: string;
+    email?: string;
+    note?: string;
   };
   paymentMethod: string;
 }

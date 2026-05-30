@@ -21,6 +21,11 @@ import {
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
+interface LocationOption {
+  code: number;
+  name: string;
+}
+
 function isValidPhone(phone: string) {
   return /^[0-9+\-\s().]{8,20}$/.test(phone.trim());
 }
@@ -37,7 +42,23 @@ export default function CheckoutClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
-  const [formData, setFormData] = useState({ name: '', phone: '', address: '' });
+  
+  const [provinces, setProvinces] = useState<LocationOption[]>([]);
+  const [districts, setDistricts] = useState<LocationOption[]>([]);
+  const [wards, setWards] = useState<LocationOption[]>([]);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '',
+    phone: '', 
+    province: '',
+    district: '',
+    ward: '',
+    detailAddress: '',
+    note: ''
+  });
+  
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayAvailability[]>([]);
 
   const { items: cartItems, clearCart, updateQuantity, removeItem } = useCartStore();
@@ -71,10 +92,68 @@ export default function CheckoutClient() {
       .catch(() => {
         if (active) setPaymentGateways([]);
       });
+
+    setIsLoadingAddress(true);
+    fetch('https://provinces.open-api.vn/api/p/')
+      .then((res) => res.json())
+      .then((data) => {
+        if (active) setProvinces(data);
+      })
+      .finally(() => {
+        if (active) setIsLoadingAddress(false);
+      });
+
     return () => {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (formData.province) {
+      const p = provinces.find((p) => p.name === formData.province);
+      if (p) {
+        setIsLoadingAddress(true);
+        fetch(`https://provinces.open-api.vn/api/p/${p.code}?depth=2`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (active) setDistricts(data.districts || []);
+          })
+          .finally(() => {
+            if (active) setIsLoadingAddress(false);
+          });
+      }
+    } else {
+      setDistricts([]);
+      setWards([]);
+    }
+    return () => {
+      active = false;
+    };
+  }, [formData.province, provinces]);
+
+  useEffect(() => {
+    let active = true;
+    if (formData.district) {
+      const d = districts.find((d) => d.name === formData.district);
+      if (d) {
+        setIsLoadingAddress(true);
+        fetch(`https://provinces.open-api.vn/api/d/${d.code}?depth=2`)
+          .then((res) => res.json())
+          .then((data) => {
+            if (active) setWards(data.wards || []);
+          })
+          .finally(() => {
+            if (active) setIsLoadingAddress(false);
+          });
+      }
+    } else {
+      setWards([]);
+    }
+    return () => {
+      active = false;
+    };
+  }, [formData.district, districts]);
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
@@ -119,10 +198,21 @@ export default function CheckoutClient() {
       return;
     }
 
+    const fullAddress = [
+      formData.detailAddress.trim(),
+      formData.ward.trim(),
+      formData.district.trim(),
+      formData.province.trim(),
+    ]
+      .filter(Boolean)
+      .join(', ');
+
     const customer = {
       name: formData.name.trim(),
+      email: formData.email.trim() || undefined,
       phone: formData.phone.trim(),
-      address: formData.address.trim(),
+      address: fullAddress,
+      note: formData.note.trim() || undefined,
     };
 
     if (!isValidPhone(customer.phone)) {
@@ -244,33 +334,109 @@ export default function CheckoutClient() {
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('shipping')}</h2>
                 <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
+                      />
+                    </div>
+                  </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
+                    <input
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('province')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
+                      </label>
+                      <select
+                        required
+                        value={formData.province}
+                        onChange={(e) => setFormData({ ...formData, province: e.target.value, district: '', ward: '' })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white"
+                      >
+                        <option value="">{t('selectProvince')}</option>
+                        {provinces.map((p) => (
+                          <option key={p.code} value={p.name}>{p.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('district')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
+                      </label>
+                      <select
+                        required
+                        disabled={!formData.province}
+                        value={formData.district}
+                        onChange={(e) => setFormData({ ...formData, district: e.target.value, ward: '' })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100"
+                      >
+                        <option value="">{t('selectDistrict')}</option>
+                        {districts.map((d) => (
+                          <option key={d.code} value={d.name}>{d.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('ward')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
+                      </label>
+                      <select
+                        required
+                        disabled={!formData.district}
+                        value={formData.ward}
+                        onChange={(e) => setFormData({ ...formData, ward: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100"
+                      >
+                        <option value="">{t('selectWard')}</option>
+                        {wards.map((w) => (
+                          <option key={w.code} value={w.name}>{w.name}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('detailAddress')}</label>
                     <input
                       type="text"
                       required
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      value={formData.detailAddress}
+                      onChange={(e) => setFormData({ ...formData, detailAddress: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
-                    <input
-                      type="tel"
-                      required
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('address')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('note')}</label>
                     <textarea
-                      required
-                      rows={3}
-                      value={formData.address}
-                      onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                      rows={2}
+                      value={formData.note}
+                      onChange={(e) => setFormData({ ...formData, note: e.target.value })}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                     />
                   </div>
