@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { Edit2, Star, Trash2 } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { useAuth } from '@/contexts/AuthContext';
 import {
   createProductReview,
   deleteProductReview,
   fetchProductReviews,
   getApiErrorMessage,
+  isNetworkError,
   ProductReview,
   updateProductReview,
 } from '@/lib/api';
@@ -20,6 +21,7 @@ interface ProductReviewsProps {
 
 export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps) {
   const locale = useLocale();
+  const t = useTranslations('productReviews');
   const { user } = useAuth();
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [page, setPage] = useState(0);
@@ -42,7 +44,14 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
       setPage(response.page);
       setError('');
     } catch (loadError) {
-      setError(getApiErrorMessage(loadError));
+      if (isNetworkError(loadError)) {
+        setReviews([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        setError('');
+      } else {
+        setError(getApiErrorMessage(loadError));
+      }
     }
   };
 
@@ -66,7 +75,11 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
       setRating(5);
       await loadReviews(0);
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError));
+      if (isNetworkError(submitError)) {
+        setError(t('serverError'));
+      } else {
+        setError(getApiErrorMessage(submitError));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -113,11 +126,11 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
       <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between mb-6">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">
-            {locale === 'vi' ? 'Danh gia va binh luan' : 'Reviews and comments'}
+            {t('title')}
           </h2>
           <p className="text-sm text-gray-500">
             {totalElements}{' '}
-            {locale === 'vi' ? 'binh luan tu khach hang' : 'customer comments'}
+            {t('customerComments')}
           </p>
         </div>
       </div>
@@ -151,15 +164,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
           onChange={(event) => setContent(event.target.value)}
           rows={3}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-900/20"
-          placeholder={
-            user
-              ? locale === 'vi'
-                ? 'Viet binh luan cua ban...'
-                : 'Write your comment...'
-              : locale === 'vi'
-                ? 'Dang nhap de binh luan'
-                : 'Sign in to comment'
-          }
+          placeholder={user ? t('writeComment') : t('signInToComment')}
           disabled={!user || isSubmitting}
         />
         <div className="mt-3 flex justify-end">
@@ -169,7 +174,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
             disabled={isSubmitting}
             className="rounded-lg bg-amber-900 px-5 py-2 font-medium text-white hover:bg-amber-800 disabled:opacity-50"
           >
-            {locale === 'vi' ? 'Gui binh luan' : 'Post comment'}
+            {t('postComment')}
           </button>
         </div>
       </form>
@@ -182,7 +187,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
                 <p className="font-semibold text-gray-900">{review.userName}</p>
                 <p className="text-xs text-gray-500">
                   {new Intl.DateTimeFormat(locale).format(new Date(review.createdAt))}
-                  {review.edited ? ` - ${locale === 'vi' ? 'da sua' : 'edited'}` : ''}
+                  {review.edited ? ` - ${t('edited')}` : ''}
                 </p>
               </div>
               {review.mine && (
@@ -238,7 +243,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
                     onClick={() => setEditingId(null)}
                     className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
                   >
-                    {locale === 'vi' ? 'Huy' : 'Cancel'}
+                    {t('cancel')}
                   </button>
                   <button
                     type="button"
@@ -246,7 +251,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
                     disabled={isSubmitting}
                     className="rounded-lg bg-amber-900 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800 disabled:opacity-50"
                   >
-                    {locale === 'vi' ? 'Luu' : 'Save'}
+                    {t('save')}
                   </button>
                 </div>
               </div>
@@ -272,7 +277,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
 
         {reviews.length === 0 && (
           <div className="rounded-lg border border-dashed border-gray-300 bg-white p-8 text-center text-gray-500">
-            {locale === 'vi' ? 'Chua co binh luan nao.' : 'No comments yet.'}
+            {t('noCommentsYet')}
           </div>
         )}
       </div>
@@ -285,7 +290,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
             onClick={() => loadReviews(page - 1)}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            {locale === 'vi' ? 'Truoc' : 'Previous'}
+            {t('previous')}
           </button>
           <span className="text-sm text-gray-500">
             {page + 1} / {totalPages}
@@ -296,7 +301,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
             onClick={() => loadReviews(page + 1)}
             className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
           >
-            {locale === 'vi' ? 'Sau' : 'Next'}
+            {t('next')}
           </button>
         </div>
       )}

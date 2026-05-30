@@ -169,5 +169,19 @@
     "empty": "Danh sách yêu thích đang trống",
     "add": "Đã thêm vào danh sách yêu thích",
     "remove": "Đã xóa khỏi danh sách yêu thích"
+  },
+  "productReviews": {
+    "title": "Đánh giá và bình luận",
+    "customerComments": "bình luận từ khách hàng",
+    "writeComment": "Viết bình luận của bạn...",
+    "signInToComment": "Đăng nhập để bình luận",
+    "postComment": "Gửi bình luận",
+    "edited": "đã sửa",
+    "cancel": "Hủy",
+    "save": "Lưu",
+    "noCommentsYet": "Chưa có bình luận nào.",
+    "previous": "Trước",
+    "next": "Sau",
+    "serverError": "Lỗi kết nối máy chủ. Tính năng bình luận đang ngoại tuyến."
   }
 }

@@ -168,5 +168,19 @@
     "empty": "Your wishlist is empty",
     "add": "Added to wishlist",
     "remove": "Removed from wishlist"
+  },
+  "productReviews": {
+    "title": "Reviews and comments",
+    "customerComments": "customer comments",
+    "writeComment": "Write your comment...",
+    "signInToComment": "Sign in to comment",
+    "postComment": "Post comment",
+    "edited": "edited",
+    "cancel": "Cancel",
+    "save": "Save",
+    "noCommentsYet": "No comments yet.",
+    "previous": "Previous",
+    "next": "Next",
+    "serverError": "Server connection error. Review feature is offline."
   }
 }
