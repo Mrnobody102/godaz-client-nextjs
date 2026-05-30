@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { Product } from '@/lib/constants/products';
 
-interface CartItem extends Product {
+export interface CartItem extends Product {
   quantity: number;
 }
 
@@ -11,6 +11,7 @@ interface CartState {
   addItem: (item: Product, qty?: number) => boolean;
   removeItem: (id: string | number) => void;
   updateQuantity: (id: string | number, quantity: number) => void;
+  mergeItems: (items: CartItem[]) => void;
   clearCart: () => void;
 }
 
@@ -67,6 +68,32 @@ const useCartStore = create<CartState>()(
             return nextQuantity > 0 ? [{ ...item, quantity: nextQuantity }] : [];
           }),
         })),
+      mergeItems: (incomingItems) =>
+        set((state) => {
+          const merged = [...state.items];
+
+          for (const incomingItem of incomingItems) {
+            const existingIndex = merged.findIndex((item) =>
+              isSameProduct(item.id, incomingItem.id)
+            );
+
+            if (existingIndex >= 0) {
+              const existingItem = merged[existingIndex];
+              const nextQuantity = clampQuantity(
+                existingItem,
+                existingItem.quantity + incomingItem.quantity
+              );
+              merged[existingIndex] = { ...existingItem, quantity: nextQuantity };
+            } else {
+              const nextQuantity = clampQuantity(incomingItem, incomingItem.quantity);
+              if (nextQuantity > 0) {
+                merged.push({ ...incomingItem, quantity: nextQuantity });
+              }
+            }
+          }
+
+          return { items: merged.filter((item) => item.quantity > 0) };
+        }),
       clearCart: () => set({ items: [] }),
     }),
     {

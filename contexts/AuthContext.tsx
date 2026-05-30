@@ -8,6 +8,28 @@ import {
   loginRequest,
   registerRequest,
 } from '@/lib/api';
+import useCartStore, { CartItem } from '@/stores/cartStore';
+
+const GUEST_CART_KEY = 'godaz-guest-cart';
+
+function readGuestCart(): CartItem[] {
+  if (typeof window === 'undefined') return [];
+
+  const raw = localStorage.getItem(GUEST_CART_KEY);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as CartItem[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function clearGuestCart() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(GUEST_CART_KEY);
+}
 
 interface User {
   id: string;
@@ -60,6 +82,8 @@ function readLocalUsers(): StoredUser[] {
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const mergeCartItems = useCartStore((state) => state.mergeItems);
+  const currentCartItems = useCartStore((state) => state.items);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -74,11 +98,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const persistSession = (nextUser: User, token?: string) => {
+    const guestCartItems = readGuestCart();
+
     setUser(nextUser);
     localStorage.setItem('user', JSON.stringify(nextUser));
     if (token) {
       localStorage.setItem('token', token);
     }
+
+    if (guestCartItems.length > 0) {
+      mergeCartItems(guestCartItems);
+      clearGuestCart();
+    }
+
+    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(currentCartItems));
   };
 
   const loginWithLocalStorage = async (email: string, password: string) => {
