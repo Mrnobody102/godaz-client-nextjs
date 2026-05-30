@@ -10,28 +10,13 @@ import { Product, handicraftProducts } from '@/lib/constants/products';
 import { Cart } from '@/components/Cart';
 import { Footer } from '@/components/Footer';
 import { AuthModal } from '@/components/AuthModal';
+import { ProductFilters } from '@/components/ProductFilters';
 import useCartStore from '@/stores/cartStore';
 import { fetchProducts, toProduct } from '@/lib/api';
-import {
-  ChevronLeft,
-  ChevronRight,
-  FilterX,
-  Leaf,
-  PackageCheck,
-  Palette,
-  Search,
-  SlidersHorizontal,
-} from 'lucide-react';
+import { ChevronLeft, ChevronRight, Leaf, PackageCheck, Palette } from 'lucide-react';
 
 const DEFAULT_PAGE_SIZE = 12;
 const PAGE_SIZE_OPTIONS = [12, 24, 48];
-const PRICE_RANGE_MAX = 1000000;
-const PRICE_RANGE_STEP = 50000;
-const PRICE_PRESETS = [
-  { label: '< 200k', min: '', max: '200000' },
-  { label: '200k - 400k', min: '200000', max: '400000' },
-  { label: '400k+', min: '400000', max: '' },
-];
 
 interface CategoryOption {
   label: string;
@@ -68,13 +53,6 @@ function parseMoneyInput(value: string | null) {
   const parsed = Number(value.replace(/\D/g, ''));
   if (!Number.isFinite(parsed) || parsed < 0) return '';
   return String(Math.floor(parsed));
-}
-
-function formatMoneyInput(value: string) {
-  if (!value) return '';
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return '';
-  return new Intl.NumberFormat('vi-VN').format(parsed);
 }
 
 function moneyFilter(value: string) {
@@ -118,7 +96,6 @@ export default function HomeClient() {
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(
     () => searchParams.get('q') || ''
   );
@@ -399,15 +376,6 @@ export default function HomeClient() {
     () => buildPageButtons(page, activeTotalPages),
     [activeTotalPages, page]
   );
-  const hasActiveFilters =
-    debouncedSearch ||
-    selectedCategory ||
-    sortOrder !== 'newest' ||
-    pageSize !== DEFAULT_PAGE_SIZE ||
-    minPrice ||
-    maxPrice ||
-    inStockOnly ||
-    featuredOnly;
 
   const addToCart = (product: Product) => {
     const added = addItem(product);
@@ -432,15 +400,6 @@ export default function HomeClient() {
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   const resetToFirstPage = () => setPage(0);
-
-  const applyPricePreset = (preset: (typeof PRICE_PRESETS)[number]) => {
-    setMinPrice(preset.min);
-    setMaxPrice(preset.max);
-    resetToFirstPage();
-  };
-
-  const currentSliderMin = Math.min(minPriceNumber ?? 0, PRICE_RANGE_MAX);
-  const currentSliderMax = Math.min(maxPriceNumber ?? PRICE_RANGE_MAX, PRICE_RANGE_MAX);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -473,235 +432,31 @@ export default function HomeClient() {
             <p className="text-lg text-gray-600">{t('products.description')}</p>
           </div>
 
-          <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-4 sm:p-5 shadow-sm">
-            <div className="flex flex-col lg:flex-row gap-4 lg:items-center lg:justify-between">
-              <div className="relative w-full lg:max-w-md">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  placeholder={tSearch('placeholder')}
-                  value={searchQuery}
-                  onChange={(event) => {
-                    setSearchQuery(event.target.value);
-                    resetToFirstPage();
-                  }}
-                  className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-amber-900 focus:border-amber-900 sm:text-sm transition-colors"
-                />
-              </div>
-
-              <div className="flex items-center gap-3">
-                <button
-                  type="button"
-                  onClick={() => setIsMobileFiltersOpen((current) => !current)}
-                  className="inline-flex md:hidden items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700"
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  {tSearch('filters')}
-                </button>
-
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  >
-                    <FilterX className="h-4 w-4" />
-                    {tSearch('clearFilters')}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div
-              className={`mt-5 space-y-5 ${
-                isMobileFiltersOpen ? 'block' : 'hidden'
-              } md:block`}
-            >
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelectedCategory(null);
-                    resetToFirstPage();
-                  }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === null
-                      ? 'bg-amber-900 text-white'
-                      : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
-                  }`}
-                >
-                  {tSearch('all')}
-                </button>
-                {categories.map((category) => (
-                  <button
-                    key={category.value}
-                    type="button"
-                    onClick={() => {
-                      setSelectedCategory(category.value);
-                      resetToFirstPage();
-                    }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                      selectedCategory === category.value
-                        ? 'bg-amber-900 text-white'
-                        : 'bg-white text-gray-700 hover:bg-amber-50 border border-gray-200'
-                    }`}
-                  >
-                    {category.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-                <select
-                  value={sortOrder}
-                  onChange={(event) => {
-                    setSortOrder(event.target.value);
-                    resetToFirstPage();
-                  }}
-                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
-                >
-                  <option value="newest">{tSearch('sortNewest')}</option>
-                  <option value="price-asc">{tSearch('sortPriceAsc')}</option>
-                  <option value="price-desc">{tSearch('sortPriceDesc')}</option>
-                </select>
-
-                <div className="rounded-xl border border-gray-300 bg-white p-3 sm:col-span-2 lg:col-span-2">
-                  <div className="grid grid-cols-2 gap-2">
-                    <label className="text-xs font-medium text-gray-500">
-                      {tSearch('minPrice')}
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="0"
-                        value={formatMoneyInput(minPrice)}
-                        onChange={(event) => {
-                          setMinPrice(parseMoneyInput(event.target.value));
-                          resetToFirstPage();
-                        }}
-                        className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-900"
-                      />
-                    </label>
-
-                    <label className="text-xs font-medium text-gray-500">
-                      {tSearch('maxPrice')}
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="1.000.000"
-                        value={formatMoneyInput(maxPrice)}
-                        onChange={(event) => {
-                          setMaxPrice(parseMoneyInput(event.target.value));
-                          resetToFirstPage();
-                        }}
-                        className="mt-1 block w-full rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-700 focus:border-amber-900 focus:outline-none focus:ring-1 focus:ring-amber-900"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mt-3 space-y-2">
-                    <div className="relative h-6">
-                      <input
-                        type="range"
-                        min="0"
-                        max={PRICE_RANGE_MAX}
-                        step={PRICE_RANGE_STEP}
-                        value={currentSliderMin}
-                        onChange={(event) => {
-                          const nextMin = Math.min(Number(event.target.value), currentSliderMax);
-                          setMinPrice(nextMin === 0 ? '' : String(nextMin));
-                          resetToFirstPage();
-                        }}
-                        className="absolute inset-x-0 top-1 h-2 w-full accent-amber-900"
-                      />
-                      <input
-                        type="range"
-                        min="0"
-                        max={PRICE_RANGE_MAX}
-                        step={PRICE_RANGE_STEP}
-                        value={currentSliderMax}
-                        onChange={(event) => {
-                          const nextMax = Math.max(Number(event.target.value), currentSliderMin);
-                          setMaxPrice(nextMax === PRICE_RANGE_MAX ? '' : String(nextMax));
-                          resetToFirstPage();
-                        }}
-                        className="absolute inset-x-0 top-3 h-2 w-full accent-amber-700"
-                      />
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      {PRICE_PRESETS.map((preset) => {
-                        const active = minPrice === preset.min && maxPrice === preset.max;
-                        return (
-                          <button
-                            key={preset.label}
-                            type="button"
-                            onClick={() => applyPricePreset(preset)}
-                            className={`rounded-full border px-3 py-1 text-xs font-medium ${
-                              active
-                                ? 'border-amber-900 bg-amber-900 text-white'
-                                : 'border-gray-200 text-gray-600 hover:bg-amber-50'
-                            }`}
-                          >
-                            {preset.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-
-                <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={inStockOnly}
-                    onChange={(event) => {
-                      setInStockOnly(event.target.checked);
-                      resetToFirstPage();
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"
-                  />
-                  {tSearch('inStock')}
-                </label>
-
-                <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
-                  <input
-                    type="checkbox"
-                    checked={featuredOnly}
-                    onChange={(event) => {
-                      setFeaturedOnly(event.target.checked);
-                      resetToFirstPage();
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"
-                  />
-                  {tSearch('featured')}
-                </label>
-
-                <select
-                  value={pageSize}
-                  onChange={(event) => {
-                    setPageSize(Number(event.target.value));
-                    resetToFirstPage();
-                  }}
-                  className="block w-full px-3 py-2.5 text-sm border-gray-300 focus:outline-none focus:ring-amber-900 focus:border-amber-900 rounded-xl border bg-white text-gray-700"
-                >
-                  {PAGE_SIZE_OPTIONS.map((size) => (
-                    <option key={size} value={size}>
-                      {tSearch('pageSize', { size })}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-sm text-gray-500">
-                <span>{tSearch('resultCount', { count: activeTotalElements })}</span>
-                {!apiConnected && !isLoadingProducts && (
-                  <span>{tSearch('offlineFallback')}</span>
-                )}
-              </div>
-            </div>
-          </div>
+          <ProductFilters
+            searchQuery={searchQuery}
+            selectedCategory={selectedCategory}
+            sortOrder={sortOrder}
+            pageSize={pageSize}
+            minPrice={minPrice}
+            maxPrice={maxPrice}
+            inStockOnly={inStockOnly}
+            featuredOnly={featuredOnly}
+            categories={categories}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            defaultPageSize={DEFAULT_PAGE_SIZE}
+            resultCount={activeTotalElements}
+            showOfflineFallback={!apiConnected && !isLoadingProducts}
+            setSearchQuery={setSearchQuery}
+            setSelectedCategory={setSelectedCategory}
+            setSortOrder={setSortOrder}
+            setPageSize={setPageSize}
+            setMinPrice={setMinPrice}
+            setMaxPrice={setMaxPrice}
+            setInStockOnly={setInStockOnly}
+            setFeaturedOnly={setFeaturedOnly}
+            resetToFirstPage={resetToFirstPage}
+            clearFilters={clearFilters}
+          />
 
           {catalogError && (
             <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">

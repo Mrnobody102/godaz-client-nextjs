@@ -141,7 +141,9 @@
     "previous": "Previous page",
     "next": "Next page",
     "offlineFallback": "Showing local demo catalog",
-    "invalidPriceRange": "Minimum price cannot be greater than maximum price."
+    "invalidPriceRange": "Minimum price cannot be greater than maximum price.",
+    "apply": "Apply",
+    "removeFilter": "Remove this filter"
   },
   "checkout": {
     "title": "Checkout",
