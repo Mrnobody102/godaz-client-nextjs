@@ -137,7 +137,7 @@ export const handicraftProducts: Product[] = [
     price: 130000,
     unit: 'cái',
     image:
-      'https://images.unsplash.com/photo-1616628182509-6ecf3f6c8d6a?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1596626417050-39c7f6ddd2c9?auto=format&fit=crop&w=1200&q=80',
     description: 'Mẹt tre thủ công dùng trang trí hoặc bày biện món ăn.',
     stock: 43,
     featured: false,

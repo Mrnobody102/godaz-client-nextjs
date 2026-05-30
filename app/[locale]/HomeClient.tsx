@@ -438,85 +438,87 @@ export default function HomeClient() {
             <p className="text-lg text-gray-600">{t('products.description')}</p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6">
-            <ProductFilters
-              searchQuery={searchQuery}
-              selectedCategory={selectedCategory}
-              sortOrder={sortOrder}
-              pageSize={pageSize}
-              minPrice={minPrice}
-              maxPrice={maxPrice}
-              inStockOnly={inStockOnly}
-              featuredOnly={featuredOnly}
-              categories={categories}
-              pageSizeOptions={PAGE_SIZE_OPTIONS}
-              defaultPageSize={DEFAULT_PAGE_SIZE}
-              resultCount={activeTotalElements}
-              showOfflineFallback={!apiConnected && !isLoadingProducts}
-              setSearchQuery={setSearchQuery}
-              setSelectedCategory={setSelectedCategory}
-              setSortOrder={setSortOrder}
-              setPageSize={setPageSize}
-              setMinPrice={setMinPrice}
-              setMaxPrice={setMaxPrice}
-              setInStockOnly={setInStockOnly}
-              setFeaturedOnly={setFeaturedOnly}
-              resetToFirstPage={resetToFirstPage}
-              clearFilters={clearFilters}
-            />
+          <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-500">
+              <span>{tSearch('resultCount', { count: activeTotalElements })}</span>
+              {!apiConnected && !isLoadingProducts && (
+                <>
+                  <span className="hidden sm:inline">•</span>
+                  <span>{tSearch('offlineFallback')}</span>
+                </>
+              )}
+            </div>
+
+            <div className="hidden lg:flex lg:items-center gap-3">
+              <select
+                value={sortOrder}
+                onChange={(event) => {
+                  setSortOrder(event.target.value);
+                  resetToFirstPage();
+                }}
+                className="h-11 w-52 appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-700 outline-none focus:border-amber-900 focus:ring-1 focus:ring-amber-900"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 16px center',
+                }}
+              >
+                <option value="newest">{tSearch('sortNewest')}</option>
+                <option value="price-asc">{tSearch('sortPriceAsc')}</option>
+                <option value="price-desc">{tSearch('sortPriceDesc')}</option>
+              </select>
+              <select
+                value={pageSize}
+                onChange={(event) => {
+                  setPageSize(Number(event.target.value));
+                  resetToFirstPage();
+                }}
+                className="h-11 w-36 appearance-none whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 pr-12 text-sm text-gray-700 outline-none focus:border-amber-900 focus:ring-1 focus:ring-amber-900"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 16px center',
+                }}
+              >
+                {PAGE_SIZE_OPTIONS.map((size) => (
+                  <option key={size} value={size}>
+                    {tSearch('pageSize', { size })}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6 lg:items-start">
+            <div className="lg:sticky lg:top-24">
+              <ProductFilters
+                searchQuery={searchQuery}
+                selectedCategory={selectedCategory}
+                sortOrder={sortOrder}
+                pageSize={pageSize}
+                minPrice={minPrice}
+                maxPrice={maxPrice}
+                inStockOnly={inStockOnly}
+                featuredOnly={featuredOnly}
+                categories={categories}
+                pageSizeOptions={PAGE_SIZE_OPTIONS}
+                defaultPageSize={DEFAULT_PAGE_SIZE}
+                resultCount={activeTotalElements}
+                showOfflineFallback={!apiConnected && !isLoadingProducts}
+                setSearchQuery={setSearchQuery}
+                setSelectedCategory={setSelectedCategory}
+                setSortOrder={setSortOrder}
+                setPageSize={setPageSize}
+                setMinPrice={setMinPrice}
+                setMaxPrice={setMaxPrice}
+                setInStockOnly={setInStockOnly}
+                setFeaturedOnly={setFeaturedOnly}
+                resetToFirstPage={resetToFirstPage}
+                clearFilters={clearFilters}
+              />
+            </div>
 
             <div>
-              <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div className="flex items-center gap-2 text-sm text-gray-500">
-                  <span>{tSearch('resultCount', { count: activeTotalElements })}</span>
-                  {!apiConnected && !isLoadingProducts && (
-                    <>
-                      <span className="hidden sm:inline">•</span>
-                      <span>{tSearch('offlineFallback')}</span>
-                    </>
-                  )}
-                </div>
-
-                <div className="hidden lg:flex lg:items-center gap-3">
-                  <select
-                    value={sortOrder}
-                    onChange={(event) => {
-                      setSortOrder(event.target.value);
-                      resetToFirstPage();
-                    }}
-                    className="h-11 w-52 appearance-none rounded-xl border border-gray-300 bg-white px-4 pr-10 text-sm text-gray-700 outline-none focus:border-amber-900 focus:ring-1 focus:ring-amber-900"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 12px center',
-                    }}
-                  >
-                    <option value="newest">{tSearch('sortNewest')}</option>
-                    <option value="price-asc">{tSearch('sortPriceAsc')}</option>
-                    <option value="price-desc">{tSearch('sortPriceDesc')}</option>
-                  </select>
-                  <select
-                    value={pageSize}
-                    onChange={(event) => {
-                      setPageSize(Number(event.target.value));
-                      resetToFirstPage();
-                    }}
-                    className="h-11 w-36 appearance-none whitespace-nowrap rounded-xl border border-gray-300 bg-white px-4 pr-10 text-sm text-gray-700 outline-none focus:border-amber-900 focus:ring-1 focus:ring-amber-900"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                      backgroundRepeat: 'no-repeat',
-                      backgroundPosition: 'right 12px center',
-                    }}
-                  >
-                    {PAGE_SIZE_OPTIONS.map((size) => (
-                      <option key={size} value={size}>
-                        {tSearch('pageSize', { size })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
               {catalogError && (
                 <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
                   {catalogError}
