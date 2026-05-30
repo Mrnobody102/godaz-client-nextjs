@@ -432,122 +432,144 @@ export default function HomeClient() {
             <p className="text-lg text-gray-600">{t('products.description')}</p>
           </div>
 
-          <ProductFilters
-            searchQuery={searchQuery}
-            selectedCategory={selectedCategory}
-            sortOrder={sortOrder}
-            pageSize={pageSize}
-            minPrice={minPrice}
-            maxPrice={maxPrice}
-            inStockOnly={inStockOnly}
-            featuredOnly={featuredOnly}
-            categories={categories}
-            pageSizeOptions={PAGE_SIZE_OPTIONS}
-            defaultPageSize={DEFAULT_PAGE_SIZE}
-            resultCount={activeTotalElements}
-            showOfflineFallback={!apiConnected && !isLoadingProducts}
-            setSearchQuery={setSearchQuery}
-            setSelectedCategory={setSelectedCategory}
-            setSortOrder={setSortOrder}
-            setPageSize={setPageSize}
-            setMinPrice={setMinPrice}
-            setMaxPrice={setMaxPrice}
-            setInStockOnly={setInStockOnly}
-            setFeaturedOnly={setFeaturedOnly}
-            resetToFirstPage={resetToFirstPage}
-            clearFilters={clearFilters}
-          />
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_minmax(0,1fr)] gap-6">
+            <ProductFilters
+              searchQuery={searchQuery}
+              selectedCategory={selectedCategory}
+              sortOrder={sortOrder}
+              pageSize={pageSize}
+              minPrice={minPrice}
+              maxPrice={maxPrice}
+              inStockOnly={inStockOnly}
+              featuredOnly={featuredOnly}
+              categories={categories}
+              pageSizeOptions={PAGE_SIZE_OPTIONS}
+              defaultPageSize={DEFAULT_PAGE_SIZE}
+              resultCount={activeTotalElements}
+              showOfflineFallback={!apiConnected && !isLoadingProducts}
+              setSearchQuery={setSearchQuery}
+              setSelectedCategory={setSelectedCategory}
+              setSortOrder={setSortOrder}
+              setPageSize={setPageSize}
+              setMinPrice={setMinPrice}
+              setMaxPrice={setMaxPrice}
+              setInStockOnly={setInStockOnly}
+              setFeaturedOnly={setFeaturedOnly}
+              resetToFirstPage={resetToFirstPage}
+              clearFilters={clearFilters}
+            />
 
-          {catalogError && (
-            <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
-              {catalogError}
-            </div>
-          )}
-
-          {isLoadingProducts && displayedProducts.length === 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {Array.from({ length: 8 }).map((_, index) => (
-                <div
-                  key={index}
-                  className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse"
+            <div>
+              <div className="mb-4 hidden lg:flex lg:items-center lg:justify-end gap-3">
+                <select
+                  value={sortOrder}
+                  onChange={(event) => {
+                    setSortOrder(event.target.value);
+                    resetToFirstPage();
+                  }}
+                  className="h-11 w-52 rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700"
                 >
-                  <div className="h-64 bg-gray-200" />
-                  <div className="p-6 space-y-4">
-                    <div className="h-5 bg-gray-200 rounded" />
-                    <div className="h-4 bg-gray-100 rounded" />
-                    <div className="h-10 bg-gray-200 rounded" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : displayedProducts.length > 0 ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {displayedProducts.map((product) => (
-                  <ProductCard
-                    key={product.id}
-                    product={product}
-                    onAddToCart={addToCart}
-                  />
-                ))}
+                  <option value="newest">{tSearch('sortNewest')}</option>
+                  <option value="price-asc">{tSearch('sortPriceAsc')}</option>
+                  <option value="price-desc">{tSearch('sortPriceDesc')}</option>
+                </select>
+                <select
+                  value={pageSize}
+                  onChange={(event) => {
+                    setPageSize(Number(event.target.value));
+                    resetToFirstPage();
+                  }}
+                  className="h-11 w-36 whitespace-nowrap rounded-xl border border-gray-300 bg-white px-3 text-sm text-gray-700"
+                >
+                  {PAGE_SIZE_OPTIONS.map((size) => (
+                    <option key={size} value={size}>
+                      {tSearch('pageSize', { size })}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              {activeTotalPages > 1 && (
-                <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <p className="text-sm text-gray-500">
-                    {tSearch('pageOf', {
-                      page: page + 1,
-                      totalPages: activeTotalPages,
-                    })}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPage((current) => Math.max(0, current - 1))}
-                      disabled={page === 0}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                      aria-label={tSearch('previous')}
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
+              <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 text-sm text-gray-500">
+                <span>{tSearch('resultCount', { count: activeTotalElements })}</span>
+                {!apiConnected && !isLoadingProducts && <span>{tSearch('offlineFallback')}</span>}
+              </div>
 
-                    {pageButtons.map((pageNumber) => (
-                      <button
-                        key={pageNumber}
-                        type="button"
-                        onClick={() => setPage(pageNumber)}
-                        className={`h-10 min-w-10 rounded-lg border px-3 text-sm font-medium ${
-                          pageNumber === page
-                            ? 'border-amber-900 bg-amber-900 text-white'
-                            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNumber + 1}
-                      </button>
-                    ))}
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setPage((current) =>
-                          Math.min(activeTotalPages - 1, current + 1)
-                        )
-                      }
-                      disabled={page >= activeTotalPages - 1}
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
-                      aria-label={tSearch('next')}
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                  </div>
+              {catalogError && (
+                <div className="mb-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                  {catalogError}
                 </div>
               )}
-            </>
-          ) : (
-            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-              <p className="text-xl text-gray-500">{tSearch('noResults')}</p>
+
+              {isLoadingProducts && displayedProducts.length === 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {Array.from({ length: 8 }).map((_, index) => (
+                    <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse">
+                      <div className="h-64 bg-gray-200" />
+                      <div className="p-6 space-y-4">
+                        <div className="h-5 bg-gray-200 rounded" />
+                        <div className="h-4 bg-gray-100 rounded" />
+                        <div className="h-10 bg-gray-200 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : displayedProducts.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {displayedProducts.map((product) => (
+                      <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+                    ))}
+                  </div>
+
+                  {activeTotalPages > 1 && (
+                    <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <p className="text-sm text-gray-500">
+                        {tSearch('pageOf', { page: page + 1, totalPages: activeTotalPages })}
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setPage((current) => Math.max(0, current - 1))}
+                          disabled={page === 0}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                          aria-label={tSearch('previous')}
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        {pageButtons.map((pageNumber) => (
+                          <button
+                            key={pageNumber}
+                            type="button"
+                            onClick={() => setPage(pageNumber)}
+                            className={`h-10 min-w-10 rounded-lg border px-3 text-sm font-medium ${
+                              pageNumber === page
+                                ? 'border-amber-900 bg-amber-900 text-white'
+                                : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            {pageNumber + 1}
+                          </button>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() => setPage((current) => Math.min(activeTotalPages - 1, current + 1))}
+                          disabled={page >= activeTotalPages - 1}
+                          className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                          aria-label={tSearch('next')}
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
+                  <p className="text-xl text-gray-500">{tSearch('noResults')}</p>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </section>
 
