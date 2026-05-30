@@ -83,7 +83,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const mergeCartItems = useCartStore((state) => state.mergeItems);
-  const currentCartItems = useCartStore((state) => state.items);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -108,10 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (guestCartItems.length > 0) {
       mergeCartItems(guestCartItems);
-      clearGuestCart();
     }
 
-    localStorage.setItem(GUEST_CART_KEY, JSON.stringify(currentCartItems));
+    clearGuestCart();
   };
 
   const loginWithLocalStorage = async (email: string, password: string) => {
