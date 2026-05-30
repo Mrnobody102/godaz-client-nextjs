@@ -306,7 +306,7 @@ function toOrder(order: ApiOrderResponse): Order {
     id: order.id,
     date: order.date,
     total: Number(order.total),
-    status: order.status,
+    status: (order.status || '').toLowerCase() as any,
     customer: order.customer,
     paymentMethod: order.paymentMethod,
     items: order.items.map((item) => ({
