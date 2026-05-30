@@ -8,7 +8,7 @@ import { Footer } from '@/components/Footer';
 import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
-import useOrderStore, { Order } from '@/stores/orderStore';
+import useOrderStore, { Order, OrderStatus } from '@/stores/orderStore';
 import { fetchMyOrders } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -74,11 +74,15 @@ export default function ProfileClient() {
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: OrderStatus) => {
     switch (status) {
-      case 'pending':
+      case 'draft':
+        return <Clock className="w-5 h-5 text-gray-500" />;
+      case 'pending_payment':
         return <Clock className="w-5 h-5 text-amber-500" />;
-      case 'confirmed':
+      case 'paid':
+        return <CheckCircle className="w-5 h-5 text-emerald-500" />;
+      case 'processing':
         return <PackageCheck className="w-5 h-5 text-indigo-500" />;
       case 'shipped':
         return <Package className="w-5 h-5 text-blue-500" />;
@@ -86,36 +90,46 @@ export default function ProfileClient() {
         return <CheckCircle className="w-5 h-5 text-green-500" />;
       case 'cancelled':
         return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'refunded':
+        return <XCircle className="w-5 h-5 text-rose-500" />;
       default:
         return null;
     }
   };
 
-  const getStatusText = (status: string) => {
-    const vi: Record<string, string> = {
-      pending: 'Đang xử lý',
-      confirmed: 'Đã xác nhận',
+  const getStatusText = (status: OrderStatus) => {
+    const vi: Record<OrderStatus, string> = {
+      draft: 'Bản nháp',
+      pending_payment: 'Chờ thanh toán',
+      paid: 'Đã thanh toán',
+      processing: 'Đang xử lý',
       shipped: 'Đang giao',
       delivered: 'Đã giao',
       cancelled: 'Đã hủy',
+      refunded: 'Đã hoàn tiền',
     };
-    const en: Record<string, string> = {
-      pending: 'Pending',
-      confirmed: 'Confirmed',
+    const en: Record<OrderStatus, string> = {
+      draft: 'Draft',
+      pending_payment: 'Pending payment',
+      paid: 'Paid',
+      processing: 'Processing',
       shipped: 'Shipped',
       delivered: 'Delivered',
       cancelled: 'Cancelled',
+      refunded: 'Refunded',
     };
-    return locale === 'vi' ? vi[status] || status : en[status] || status;
+    return locale === 'vi' ? vi[status] : en[status];
   };
 
   const statusOptions = [
     { value: 'all' as const, label: locale === 'vi' ? 'Tất cả' : 'All' },
-    { value: 'pending' as const, label: getStatusText('pending') },
-    { value: 'confirmed' as const, label: getStatusText('confirmed') },
+    { value: 'pending_payment' as const, label: getStatusText('pending_payment') },
+    { value: 'paid' as const, label: getStatusText('paid') },
+    { value: 'processing' as const, label: getStatusText('processing') },
     { value: 'shipped' as const, label: getStatusText('shipped') },
     { value: 'delivered' as const, label: getStatusText('delivered') },
     { value: 'cancelled' as const, label: getStatusText('cancelled') },
+    { value: 'refunded' as const, label: getStatusText('refunded') },
   ];
   const filteredOrders = useMemo(
     () =>

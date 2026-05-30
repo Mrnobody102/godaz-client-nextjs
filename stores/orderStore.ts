@@ -6,12 +6,22 @@ export interface OrderItem extends Product {
   quantity: number;
 }
 
+export type OrderStatus =
+  | 'draft'
+  | 'pending_payment'
+  | 'paid'
+  | 'processing'
+  | 'shipped'
+  | 'delivered'
+  | 'cancelled'
+  | 'refunded';
+
 export interface Order {
   id: string;
   date: string;
   items: OrderItem[];
   total: number;
-  status: 'pending' | 'confirmed' | 'shipped' | 'delivered' | 'cancelled';
+  status: OrderStatus;
   customer: {
     name: string;
     phone: string;

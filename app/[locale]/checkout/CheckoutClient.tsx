@@ -89,7 +89,7 @@ export default function CheckoutClient() {
     date: new Date().toISOString(),
     items: [...cartItems],
     total,
-    status: 'pending',
+    status: paymentMethod === 'cod' ? 'processing' : 'pending_payment',
     customer,
     paymentMethod,
   });
