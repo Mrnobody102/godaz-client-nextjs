@@ -135,6 +135,16 @@ export default function CheckoutClient() {
   }, [formData.province, provinces]);
 
   useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.name || '',
+        email: prev.email || user.email || '',
+      }));
+    }
+  }, [user]);
+
+  useEffect(() => {
     let active = true;
     if (formData.district) {
       const d = districts.find((d) => d.name === formData.district);
