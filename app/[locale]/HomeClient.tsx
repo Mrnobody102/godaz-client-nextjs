@@ -17,6 +17,7 @@ import { ChevronLeft, ChevronRight, Leaf, PackageCheck, Palette } from 'lucide-r
 
 const DEFAULT_PAGE_SIZE = 12;
 const PAGE_SIZE_OPTIONS = [12, 24, 48];
+const SORT_OPTIONS = ['newest', 'price-asc', 'price-desc'] as const;
 
 interface CategoryOption {
   label: string;
@@ -53,6 +54,11 @@ function parseMoneyInput(value: string | null) {
   const parsed = Number(value.replace(/\D/g, ''));
   if (!Number.isFinite(parsed) || parsed < 0) return '';
   return String(Math.floor(parsed));
+}
+
+function parseSortParam(value: string | null) {
+  if (!value) return 'newest';
+  return SORT_OPTIONS.includes(value as (typeof SORT_OPTIONS)[number]) ? value : 'newest';
 }
 
 function moneyFilter(value: string) {
@@ -103,8 +109,8 @@ export default function HomeClient() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(
     () => searchParams.get('category') || null
   );
-  const [sortOrder, setSortOrder] = useState(
-    () => searchParams.get('sort') || 'newest'
+  const [sortOrder, setSortOrder] = useState(() =>
+    parseSortParam(searchParams.get('sort'))
   );
   const [page, setPage] = useState(() => parsePageParam(searchParams.get('page')));
   const [pageSize, setPageSize] = useState(() =>
@@ -143,7 +149,7 @@ export default function HomeClient() {
   useEffect(() => {
     const nextSearch = searchParams.get('q') || '';
     const nextCategory = searchParams.get('category') || null;
-    const nextSort = searchParams.get('sort') || 'newest';
+    const nextSort = parseSortParam(searchParams.get('sort'));
     const nextPage = parsePageParam(searchParams.get('page'));
     const nextSize = parsePageSizeParam(searchParams.get('size'));
     const nextMinPrice = parseMoneyInput(searchParams.get('minPrice'));

@@ -51,6 +51,7 @@ export default function CheckoutClient() {
   const stockIssues = cartItems.filter(
     (item) => typeof item.stock === 'number' && item.quantity > item.stock
   );
+  const stockIssueNames = stockIssues.map((item) => item.name).join(', ');
   const hasStockIssue = stockIssues.length > 0;
   const gatewayEnabled = useMemo(
     () =>
@@ -112,8 +113,8 @@ export default function CheckoutClient() {
     if (hasStockIssue) {
       setError(
         locale === 'vi'
-          ? 'Một số sản phẩm đã vượt quá tồn kho. Vui lòng giảm số lượng trước khi đặt hàng.'
-          : 'Some products exceed available stock. Please reduce quantities before checkout.'
+          ? `Một số sản phẩm đã vượt quá tồn kho: ${stockIssueNames}. Vui lòng giảm số lượng trước khi đặt hàng.`
+          : `Some products exceed available stock: ${stockIssueNames}. Please reduce quantities before checkout.`
       );
       return;
     }
@@ -231,8 +232,8 @@ export default function CheckoutClient() {
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
               {locale === 'vi'
-                ? 'Có sản phẩm vượt quá tồn kho. Hãy giảm số lượng trong giỏ hàng.'
-                : 'Some cart items exceed available stock. Reduce quantities before checkout.'}
+                ? `Có sản phẩm vượt quá tồn kho: ${stockIssueNames}. Hãy giảm số lượng trong giỏ hàng.`
+                : `Some cart items exceed available stock: ${stockIssueNames}. Reduce quantities before checkout.`}
             </p>
           </div>
         )}

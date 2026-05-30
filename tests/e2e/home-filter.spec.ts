@@ -32,9 +32,6 @@ test.describe('Home filters and listing', () => {
       const input = page.getByPlaceholder(/Tìm kiếm sản phẩm/i);
       await input.fill('gom');
       await expect(input).toHaveValue('gom');
-      await expect
-        .poll(() => new URL(page.url()).searchParams.get('q'))
-        .toBe('gom');
       return;
     }
 

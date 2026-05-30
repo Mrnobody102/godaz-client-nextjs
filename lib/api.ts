@@ -252,8 +252,16 @@ export async function deleteProductReview(reviewId: string) {
   await api.delete(`/api/reviews/${reviewId}`);
 }
 
+function getIdempotencyKey(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
+
 export async function createOrder(payload: CheckoutPayload) {
-  const { data } = await api.post<ApiOrderResponse>('/api/orders', payload);
+  const { data } = await api.post<ApiOrderResponse>('/api/orders', payload, {
+    headers: {
+      'X-Idempotency-Key': getIdempotencyKey('order'),
+    },
+  });
   return toOrder(data);
 }
 
@@ -263,10 +271,18 @@ export async function fetchPaymentGateways() {
 }
 
 export async function createPayment(orderId: string, gateway: 'vnpay' | 'momo') {
-  const { data } = await api.post<CreatePaymentResponse>('/api/payments', {
-    orderId,
-    gateway,
-  });
+  const { data } = await api.post<CreatePaymentResponse>(
+    '/api/payments',
+    {
+      orderId,
+      gateway,
+    },
+    {
+      headers: {
+        'X-Idempotency-Key': getIdempotencyKey('payment'),
+      },
+    }
+  );
   return data;
 }
 
