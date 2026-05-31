@@ -31,7 +31,6 @@ export interface AuthUser {
   avatarUrl?: string | null;
   phone?: string | null;
   province?: string | null;
-  district?: string | null;
   ward?: string | null;
   detailAddress?: string | null;
 }
@@ -39,7 +38,6 @@ export interface AuthUser {
 export interface UpdateProfileRequest {
   phone: string;
   province: string;
-  district: string;
   ward: string;
   detailAddress: string;
 }

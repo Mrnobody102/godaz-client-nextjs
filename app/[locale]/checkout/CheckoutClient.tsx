@@ -45,7 +45,6 @@ export default function CheckoutClient() {
   const [paymentMethod, setPaymentMethod] = useState('cod');
   
   const [provinces, setProvinces] = useState<LocationOption[]>([]);
-  const [districts, setDistricts] = useState<LocationOption[]>([]);
   const [wards, setWards] = useState<LocationOption[]>([]);
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
 
@@ -54,7 +53,6 @@ export default function CheckoutClient() {
     email: '',
     phone: '', 
     province: '',
-    district: '',
     ward: '',
     detailAddress: '',
     note: ''
@@ -115,17 +113,19 @@ export default function CheckoutClient() {
       const p = provinces.find((p) => p.name === formData.province);
       if (p) {
         setIsLoadingAddress(true);
-        fetch(`https://provinces.open-api.vn/api/p/${p.code}?depth=2`)
+        fetch(`https://provinces.open-api.vn/api/p/${p.code}?depth=3`)
           .then((res) => res.json())
           .then((data) => {
-            if (active) setDistricts(data.districts || []);
+            if (active) {
+              const allWards = data.districts?.flatMap((d: any) => d.wards || []) || [];
+              setWards(allWards);
+            }
           })
           .finally(() => {
             if (active) setIsLoadingAddress(false);
           });
       }
     } else {
-      setDistricts([]);
       setWards([]);
     }
     return () => {
@@ -141,35 +141,13 @@ export default function CheckoutClient() {
         email: prev.email || user.email || '',
         phone: prev.phone || user.phone || '',
         province: prev.province || user.province || '',
-        district: prev.district || user.district || '',
         ward: prev.ward || user.ward || '',
         detailAddress: prev.detailAddress || user.detailAddress || '',
       }));
     }
   }, [user]);
 
-  useEffect(() => {
-    let active = true;
-    if (formData.district) {
-      const d = districts.find((d) => d.name === formData.district);
-      if (d) {
-        setIsLoadingAddress(true);
-        fetch(`https://provinces.open-api.vn/api/d/${d.code}?depth=2`)
-          .then((res) => res.json())
-          .then((data) => {
-            if (active) setWards(data.wards || []);
-          })
-          .finally(() => {
-            if (active) setIsLoadingAddress(false);
-          });
-      }
-    } else {
-      setWards([]);
-    }
-    return () => {
-      active = false;
-    };
-  }, [formData.district, districts]);
+
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
@@ -217,7 +195,6 @@ export default function CheckoutClient() {
     const fullAddress = [
       formData.detailAddress.trim(),
       formData.ward.trim(),
-      formData.district.trim(),
       formData.province.trim(),
     ]
       .filter(Boolean)
@@ -383,7 +360,7 @@ export default function CheckoutClient() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('province')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
@@ -391,7 +368,7 @@ export default function CheckoutClient() {
                       <Select
                         required
                         value={formData.province}
-                        onValueChange={(val) => setFormData({ ...formData, province: val, district: '', ward: '' })}
+                        onValueChange={(val) => setFormData({ ...formData, province: val, ward: '' })}
                       >
                         <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white h-[42px]">
                           <SelectValue placeholder={t('selectProvince')} />
@@ -403,33 +380,14 @@ export default function CheckoutClient() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('district')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
-                      </label>
-                      <Select
-                        required
-                        disabled={!formData.province}
-                        value={formData.district}
-                        onValueChange={(val) => setFormData({ ...formData, district: val, ward: '' })}
-                      >
-                        <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100 h-[42px]">
-                          <SelectValue placeholder={t('selectDistrict')} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {districts.map((d) => (
-                            <SelectItem key={d.code} value={d.name}>{d.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('ward')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
                       </label>
                       <Select
                         required
-                        disabled={!formData.district}
+                        disabled={!formData.province}
                         value={formData.ward}
                         onValueChange={(val) => setFormData({ ...formData, ward: val })}
                       >

@@ -34,13 +34,11 @@ export default function ProfileInfoClient() {
   const [formData, setFormData] = useState({
     phone: '',
     province: '',
-    district: '',
     ward: '',
     detailAddress: '',
   });
 
   const [provinces, setProvinces] = useState<Province[]>([]);
-  const [districts, setDistricts] = useState<District[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -51,7 +49,6 @@ export default function ProfileInfoClient() {
       setFormData({
         phone: user.phone || '',
         province: user.province || '',
-        district: user.district || '',
         ward: user.ward || '',
         detailAddress: user.detailAddress || '',
       });
@@ -77,12 +74,11 @@ export default function ProfileInfoClient() {
     if (formData.province) {
       const p = provinces.find((p) => p.name === formData.province);
       if (active) {
-        setDistricts(p ? p.districts : []);
-        setWards([]);
+        const allWards = p ? p.districts.flatMap((d) => d.wards || []) : [];
+        setWards(allWards);
       }
     } else {
       if (active) {
-        setDistricts([]);
         setWards([]);
       }
     }
@@ -91,31 +87,11 @@ export default function ProfileInfoClient() {
     };
   }, [formData.province, provinces]);
 
-  useEffect(() => {
-    let active = true;
-    if (formData.district) {
-      const d = districts.find((d) => d.name === formData.district);
-      if (active) {
-        setWards(d ? d.wards : []);
-      }
-    } else {
-      if (active) {
-        setWards([]);
-      }
-    }
-    return () => {
-      active = false;
-    };
-  }, [formData.district, districts]);
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => {
       const next = { ...prev, [name]: value };
       if (name === 'province') {
-        next.district = '';
-        next.ward = '';
-      } else if (name === 'district') {
         next.ward = '';
       }
       return next;
@@ -196,7 +172,7 @@ export default function ProfileInfoClient() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {locale === 'vi' ? 'Tỉnh / Thành phố' : 'Province / City'}
@@ -204,7 +180,7 @@ export default function ProfileInfoClient() {
                 <Select
                   value={formData.province}
                   onValueChange={(value) => {
-                    setFormData((prev) => ({ ...prev, province: value, district: '', ward: '' }));
+                    setFormData((prev) => ({ ...prev, province: value, ward: '' }));
                   }}
                 >
                   <SelectTrigger className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white h-[50px]">
@@ -220,29 +196,7 @@ export default function ProfileInfoClient() {
                 </Select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {locale === 'vi' ? 'Quận / Huyện' : 'District'}
-                </label>
-                <Select
-                  value={formData.district}
-                  onValueChange={(value) => {
-                    setFormData((prev) => ({ ...prev, district: value, ward: '' }));
-                  }}
-                  disabled={!formData.province}
-                >
-                  <SelectTrigger className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white disabled:bg-gray-50 h-[50px]">
-                    <SelectValue placeholder={locale === 'vi' ? 'Chọn Quận / Huyện' : 'Select District'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {districts.map((d) => (
-                      <SelectItem key={d.code} value={d.name}>
-                        {d.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -253,7 +207,7 @@ export default function ProfileInfoClient() {
                   onValueChange={(value) => {
                     setFormData((prev) => ({ ...prev, ward: value }));
                   }}
-                  disabled={!formData.district}
+                  disabled={!formData.province}
                 >
                   <SelectTrigger className="w-full px-4 py-3 rounded-lg border border-gray-200 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 bg-white disabled:bg-gray-50 h-[50px]">
                     <SelectValue placeholder={locale === 'vi' ? 'Chọn Phường / Xã' : 'Select Ward'} />
