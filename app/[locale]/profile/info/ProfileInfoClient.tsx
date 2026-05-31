@@ -5,6 +5,9 @@ import { useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
+import { Cart } from '@/components/Cart';
+import { AuthModal } from '@/components/AuthModal';
+import useCartStore from '@/stores/cartStore';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, Save, User as UserIcon } from 'lucide-react';
 import { updateProfile } from '@/lib/api';
@@ -17,10 +20,6 @@ interface Location {
 }
 
 interface Province extends Location {
-  districts: District[];
-}
-
-interface District extends Location {
   wards: Ward[];
 }
 
@@ -41,6 +40,15 @@ export default function ProfileInfoClient() {
   const [provinces, setProvinces] = useState<Province[]>([]);
   const [wards, setWards] = useState<Ward[]>([]);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  const {
+    items: cartItems,
+    updateQuantity,
+    removeItem,
+  } = useCartStore();
+  const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 
   useEffect(() => {
     if (isLoading) return;
@@ -59,7 +67,7 @@ export default function ProfileInfoClient() {
 
   useEffect(() => {
     let active = true;
-    fetch('https://provinces.open-api.vn/api/?depth=3')
+    fetch('https://provinces.open-api.vn/api/v2/?depth=2')
       .then((res) => res.json())
       .then((data) => {
         if (active) setProvinces(data);
@@ -74,8 +82,7 @@ export default function ProfileInfoClient() {
     if (formData.province) {
       const p = provinces.find((p) => p.name === formData.province);
       if (active) {
-        const allWards = p ? p.districts.flatMap((d) => d.wards || []) : [];
-        setWards(allWards);
+        setWards(p ? p.wards || [] : []);
       }
     } else {
       if (active) {
@@ -117,7 +124,11 @@ export default function ProfileInfoClient() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      <Header cartCount={0} onCartClick={() => {}} onAuthClick={() => {}} />
+      <Header
+        cartCount={cartCount}
+        onCartClick={() => setIsCartOpen(true)}
+        onAuthClick={() => setIsAuthModalOpen(true)}
+      />
 
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-12 w-full">
         <div className="mb-8 flex items-center justify-between">
@@ -252,6 +263,21 @@ export default function ProfileInfoClient() {
       </main>
 
       <Footer />
+
+      <Cart
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        items={cartItems}
+        onUpdateQuantity={(id, quantity) =>
+          quantity === 0 ? removeItem(id) : updateQuantity(id, quantity)
+        }
+        onRemoveItem={(id) => removeItem(id)}
+      />
+
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+      />
     </div>
   );
 }

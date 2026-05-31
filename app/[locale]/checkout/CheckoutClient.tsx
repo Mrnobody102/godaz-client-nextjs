@@ -93,7 +93,7 @@ export default function CheckoutClient() {
       });
 
     setIsLoadingAddress(true);
-    fetch('https://provinces.open-api.vn/api/p/')
+    fetch('https://provinces.open-api.vn/api/v2/p/')
       .then((res) => res.json())
       .then((data) => {
         if (active) setProvinces(data);
@@ -113,12 +113,11 @@ export default function CheckoutClient() {
       const p = provinces.find((p) => p.name === formData.province);
       if (p) {
         setIsLoadingAddress(true);
-        fetch(`https://provinces.open-api.vn/api/p/${p.code}?depth=3`)
+        fetch(`https://provinces.open-api.vn/api/v2/p/${p.code}?depth=2`)
           .then((res) => res.json())
           .then((data) => {
             if (active) {
-              const allWards = data.districts?.flatMap((d: any) => d.wards || []) || [];
-              setWards(allWards);
+              setWards(data.wards || []);
             }
           })
           .finally(() => {

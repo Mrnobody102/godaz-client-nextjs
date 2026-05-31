@@ -176,7 +176,7 @@ export const handicraftProducts: Product[] = [
     price: 260000,
     unit: 'cái',
     image:
-      'https://images.unsplash.com/photo-1565193298357-cd9a7f8d23fb?auto=format&fit=crop&w=1200&q=80',
+      'https://images.unsplash.com/photo-1610701596007-11502861dcfa?auto=format&fit=crop&w=1200&q=80',
     description: 'Đĩa gốm trang trí vẽ tay, điểm nhấn cho bàn ăn Việt.',
     stock: 28,
     featured: false,

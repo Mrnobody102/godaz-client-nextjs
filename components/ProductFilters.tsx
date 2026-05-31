@@ -9,8 +9,9 @@ import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from './ui/
 const PRICE_RANGE_MAX = 1000000;
 const PRICE_PRESETS = [
   { label: '< 200k', min: '', max: '200000' },
-  { label: '200k - 400k', min: '200000', max: '400000' },
-  { label: '400k+', min: '400000', max: '' },
+  { label: '200k – 400k', min: '200000', max: '400000' },
+  { label: '400k – 600k', min: '400000', max: '600000' },
+  { label: '> 600k', min: '600000', max: '' },
 ];
 
 export interface CategoryOption {
@@ -209,7 +210,7 @@ export function ProductFilters(props: ProductFiltersProps) {
         </label>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 grid grid-cols-2 gap-2">
         {PRICE_PRESETS.map((preset) => {
           const active = props.minPrice === preset.min && props.maxPrice === preset.max;
           return (
@@ -221,7 +222,7 @@ export function ProductFilters(props: ProductFiltersProps) {
                 props.setMaxPrice(preset.max);
                 props.resetToFirstPage();
               }}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium text-center transition-colors ${
                 active
                   ? 'border-amber-900 bg-amber-900 text-white'
                   : 'border-gray-200 text-gray-600 hover:bg-amber-50'
