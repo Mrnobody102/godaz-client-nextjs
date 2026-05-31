@@ -29,6 +29,24 @@ export interface AuthUser {
   email: string;
   role: string;
   avatarUrl?: string | null;
+  phone?: string | null;
+  province?: string | null;
+  district?: string | null;
+  ward?: string | null;
+  detailAddress?: string | null;
+}
+
+export interface UpdateProfileRequest {
+  phone: string;
+  province: string;
+  district: string;
+  ward: string;
+  detailAddress: string;
+}
+
+export async function updateProfile(request: UpdateProfileRequest) {
+  const { data } = await api.put<{ message: string }>('/api/users/profile', request);
+  return data;
 }
 
 export interface LoginResponse {

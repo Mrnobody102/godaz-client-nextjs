@@ -38,6 +38,11 @@ interface User {
   username?: string;
   role?: string;
   avatarUrl?: string | null;
+  phone?: string | null;
+  province?: string | null;
+  district?: string | null;
+  ward?: string | null;
+  detailAddress?: string | null;
 }
 
 interface StoredUser extends User {
@@ -50,6 +55,7 @@ interface AuthContextType {
   loginWithGoogle: (idToken: string) => Promise<boolean>;
   register: (name: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  updateSession: (updatedUser: Partial<User>) => void;
   isLoading: boolean;
 }
 
@@ -63,6 +69,11 @@ function toUser(user: AuthUser): User {
     username: user.username,
     role: user.role,
     avatarUrl: user.avatarUrl,
+    phone: user.phone,
+    province: user.province,
+    district: user.district,
+    ward: user.ward,
+    detailAddress: user.detailAddress,
   };
 }
 
@@ -200,6 +211,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const updateSession = (updatedUser: Partial<User>) => {
+    if (user) {
+      const nextUser = { ...user, ...updatedUser };
+      setUser(nextUser);
+      localStorage.setItem('user', JSON.stringify(nextUser));
+    }
+  };
+
   const logout = () => {
     setUser(null);
     localStorage.removeItem('user');
@@ -207,7 +226,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, loginWithGoogle, register, logout, updateSession, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

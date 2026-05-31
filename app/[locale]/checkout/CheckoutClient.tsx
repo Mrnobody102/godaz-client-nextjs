@@ -139,6 +139,11 @@ export default function CheckoutClient() {
         ...prev,
         name: prev.name || user.name || '',
         email: prev.email || user.email || '',
+        phone: prev.phone || user.phone || '',
+        province: prev.province || user.province || '',
+        district: prev.district || user.district || '',
+        ward: prev.ward || user.ward || '',
+        detailAddress: prev.detailAddress || user.detailAddress || '',
       }));
     }
   }, [user]);

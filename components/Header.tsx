@@ -133,6 +133,14 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                         <p className="text-xs text-gray-500 truncate">{user.email}</p>
                       </div>
                       <Link
+                        href="/profile/info"
+                        onClick={() => setUserMenuOpen(false)}
+                        className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                      >
+                        <User className="w-4 h-4" />
+                        {locale === 'vi' ? 'Thông tin cá nhân' : 'Profile Info'}
+                      </Link>
+                      <Link
                         href="/profile"
                         onClick={() => setUserMenuOpen(false)}
                         className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
