@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { getApiErrorMessage, toProduct } from '@/lib/api';
+import { normalizeOrderStatus, normalizePaymentStatus } from '@/stores/orderStore';
 
 describe('api transformers and errors', () => {
   it('maps api product to ui product correctly', () => {
@@ -42,5 +43,12 @@ describe('api transformers and errors', () => {
 
   it('returns fallback message for unknown errors', () => {
     expect(getApiErrorMessage(new Error('boom'))).toBe('Unexpected error');
+  });
+
+  it('normalizes production order and payment statuses', () => {
+    expect(normalizeOrderStatus('PENDING_PAYMENT')).toBe('pending_payment');
+    expect(normalizeOrderStatus('confirmed')).toBe('processing');
+    expect(normalizePaymentStatus('CAPTURED')).toBe('captured');
+    expect(normalizePaymentStatus('unknown')).toBeNull();
   });
 });

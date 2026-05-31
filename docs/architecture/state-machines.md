@@ -2,7 +2,10 @@
 
 ## Order state machine
 
-`draft -> pending_payment -> paid -> processing -> shipped -> delivered`
+`pending_payment -> paid -> processing -> shipped -> delivered`
+
+COD policy:
+- `processing` can be the initial state after server-side stock commit.
 
 Alternative terminal flows:
 - `pending_payment -> cancelled`
@@ -26,6 +29,7 @@ Alternative terminal flows:
 ### Idempotency rules
 - Repeated webhook for same transition must be no-op.
 - Out-of-order events must not break valid terminal states.
+- Repeated `POST /api/orders` or `POST /api/payments` with the same idempotency key and payload must replay the original response without duplicate side effects.
 
 ## Compatibility matrix (high level)
 

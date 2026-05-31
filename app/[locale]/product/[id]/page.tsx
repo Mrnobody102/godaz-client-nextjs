@@ -6,7 +6,7 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-import { fetchProduct, toProduct } from '@/lib/api';
+import { fetchProduct } from '@/lib/api';
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   try {
     const apiProduct = await fetchProduct(id);
     productName = apiProduct.name;
-  } catch (error) {
+  } catch {
     const fallbackProduct = handicraftProducts.find((product) => String(product.id) === id);
     if (fallbackProduct) {
       productName = fallbackProduct.name;

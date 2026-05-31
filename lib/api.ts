@@ -1,6 +1,12 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Product } from '@/lib/constants/products';
-import { Order, normalizeOrderStatus } from '@/stores/orderStore';
+import {
+  Order,
+  OrderEvent,
+  OrderStatus,
+  normalizeOrderStatus,
+  normalizePaymentStatus,
+} from '@/stores/orderStore';
 
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
@@ -148,9 +154,20 @@ interface ApiOrderResponse {
   date: string;
   items: ApiOrderItem[];
   total: number | string;
-  status: Order['status'];
+  status: string;
   customer: Order['customer'];
   paymentMethod: string;
+  paymentStatus?: string | null;
+  reservationExpiresAt?: string | null;
+  events?: Array<{
+    actorType: string;
+    actorId?: string | null;
+    fromStatus?: string | null;
+    toStatus: string;
+    reason?: string | null;
+    metadata?: string | null;
+    createdAt: string;
+  }>;
 }
 
 interface ApiOrderPageResponse {
@@ -304,6 +321,11 @@ export async function createPayment(orderId: string, gateway: 'vnpay' | 'momo') 
   return data;
 }
 
+export async function fetchOrder(orderId: string) {
+  const { data } = await api.get<ApiOrderResponse>(`/api/orders/${orderId}`);
+  return toOrder(data);
+}
+
 export async function fetchMyOrders(page = 0, size = 10) {
   const { data } = await api.get<ApiOrderPageResponse>('/api/orders/my', {
     params: { page, size },
@@ -317,14 +339,59 @@ export async function fetchMyOrders(page = 0, size = 10) {
   };
 }
 
+export async function fetchAdminOrders(params?: {
+  status?: OrderStatus | 'all';
+  paymentMethod?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  page?: number;
+  size?: number;
+}) {
+  const { data } = await api.get<ApiOrderPageResponse>('/api/admin/orders', {
+    params: {
+      status: params?.status && params.status !== 'all' ? params.status : undefined,
+      paymentMethod: params?.paymentMethod || undefined,
+      createdFrom: params?.createdFrom || undefined,
+      createdTo: params?.createdTo || undefined,
+      page: params?.page ?? 0,
+      size: params?.size ?? 20,
+    },
+  });
+  return {
+    orders: data.orders.map(toOrder),
+    totalElements: data.totalElements,
+    totalPages: data.totalPages,
+    page: data.page,
+    size: data.size,
+  };
+}
+
+export async function transitionAdminOrder(
+  orderId: string,
+  status: OrderStatus,
+  reason?: string
+) {
+  const { data } = await api.post<ApiOrderResponse>(
+    `/api/admin/orders/${orderId}/transitions`,
+    {
+      status,
+      reason,
+    }
+  );
+  return toOrder(data);
+}
+
 function toOrder(order: ApiOrderResponse): Order {
   return {
     id: order.id,
     date: order.date,
     total: Number(order.total),
-    status: normalizeOrderStatus((order.status || '').toLowerCase()),
+    status: normalizeOrderStatus(order.status || ''),
     customer: order.customer,
     paymentMethod: order.paymentMethod,
+    paymentStatus: normalizePaymentStatus(order.paymentStatus),
+    reservationExpiresAt: order.reservationExpiresAt ?? null,
+    events: (order.events || []).map(toOrderEvent),
     items: order.items.map((item) => ({
       id: item.productId,
       name: item.name,
@@ -335,6 +402,18 @@ function toOrder(order: ApiOrderResponse): Order {
       description: item.description,
       quantity: item.quantity,
     })),
+  };
+}
+
+function toOrderEvent(event: NonNullable<ApiOrderResponse['events']>[number]): OrderEvent {
+  return {
+    actorType: event.actorType,
+    actorId: event.actorId,
+    fromStatus: event.fromStatus ? normalizeOrderStatus(event.fromStatus) : null,
+    toStatus: normalizeOrderStatus(event.toStatus),
+    reason: event.reason,
+    metadata: event.metadata,
+    createdAt: event.createdAt,
   };
 }
 

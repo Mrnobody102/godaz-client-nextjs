@@ -24,6 +24,9 @@
 ## Order creation
 `POST /api/orders`
 
+Header:
+- `X-Idempotency-Key?: string`
+
 ### Payload
 - `items: [{ productId: number, quantity: number }]`
 - `customer: { name, phone, address }`
@@ -32,14 +35,36 @@
 ### Rules
 - Reject if stock insufficient.
 - Return immutable order snapshot.
+- Same idempotency key + same payload returns original response.
+- Same idempotency key + different payload returns `409 Conflict`.
+
+### Response additions
+- `status`: `pending_payment | paid | processing | shipped | delivered | cancelled | refunded`
+- `paymentStatus?: initiated | pending | authorized | captured | failed | expired | refunded`
+- `reservationExpiresAt?: string`
+- `events[]`: immutable order timeline entries.
 
 ## Payment gateways
 `GET /api/payments/gateways`
 
 ## Payment intent
 `POST /api/payments`
+Header:
+- `X-Idempotency-Key?: string`
+
 - payload: `{ orderId: string, gateway: 'vnpay' | 'momo' }`
 - return `paymentUrl` for redirect flow.
+
+## Admin order operations
+`GET /api/admin/orders?status&paymentMethod&createdFrom&createdTo&page&size`
+- `createdFrom`/`createdTo` use `YYYY-MM-DD`.
+
+`GET /api/admin/orders/{id}`
+
+`POST /api/admin/orders/{id}/transitions`
+- payload: `{ status, reason? }`
+- requires `ADMIN` authority.
+- transitions are state-machine guarded and audit-logged.
 
 ## Error handling baseline
 - API error body should provide:

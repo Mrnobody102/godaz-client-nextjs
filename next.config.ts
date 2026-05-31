@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin('./i18n.ts');
 
 const nextConfig: NextConfig = {
   /* config options here */
+  allowedDevOrigins: ['127.0.0.1'],
   images: {
     // Unsplash URLs already include CDN optimization params (auto=format&w=1200&q=80),
     // so we skip Next.js' optimizer. This also avoids the image optimizer failing in
