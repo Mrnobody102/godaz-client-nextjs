@@ -16,6 +16,29 @@ export type OrderStatus =
   | 'cancelled'
   | 'refunded';
 
+const LEGACY_STATUS_MAP: Record<string, OrderStatus> = {
+  pending: 'pending_payment',
+  confirmed: 'processing',
+};
+
+const KNOWN_STATUSES: OrderStatus[] = [
+  'draft',
+  'pending_payment',
+  'paid',
+  'processing',
+  'shipped',
+  'delivered',
+  'cancelled',
+  'refunded',
+];
+
+export function normalizeOrderStatus(status: string): OrderStatus {
+  if (KNOWN_STATUSES.includes(status as OrderStatus)) {
+    return status as OrderStatus;
+  }
+  return LEGACY_STATUS_MAP[status] ?? 'processing';
+}
+
 export interface Order {
   id: string;
   date: string;

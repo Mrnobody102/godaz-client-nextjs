@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useLocale, useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
 import { Link, useRouter } from '@/i18n/routing';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
@@ -24,7 +24,7 @@ interface District extends Location {
   wards: Ward[];
 }
 
-interface Ward extends Location {}
+type Ward = Location;
 
 export default function ProfileInfoClient() {
   const locale = useLocale();

@@ -8,7 +8,7 @@ import { Footer } from '@/components/Footer';
 import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
-import useOrderStore, { Order, OrderStatus } from '@/stores/orderStore';
+import useOrderStore, { Order, OrderStatus, normalizeOrderStatus } from '@/stores/orderStore';
 import { fetchMyOrders } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -135,7 +135,9 @@ export default function ProfileClient() {
     () =>
       statusFilter === 'all'
         ? displayedOrders
-        : displayedOrders.filter((order) => order.status === statusFilter),
+        : displayedOrders.filter(
+            (order) => normalizeOrderStatus(order.status) === statusFilter
+          ),
     [displayedOrders, statusFilter]
   );
 
@@ -257,9 +259,9 @@ export default function ProfileClient() {
                       {new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(order.total)}₫
                     </span>
                     <div className="flex items-center gap-2 bg-gray-50 px-3 py-1 rounded-full">
-                      {getStatusIcon(order.status)}
-                      <span className="text-sm font-medium capitalize text-gray-700">
-                        {getStatusText(order.status)}
+                      {getStatusIcon(normalizeOrderStatus(order.status))}
+                      <span className="text-sm font-medium text-gray-700">
+                        {getStatusText(normalizeOrderStatus(order.status))}
                       </span>
                     </div>
                   </div>
@@ -318,7 +320,7 @@ export default function ProfileClient() {
                   onClick={() => setOrdersPage((current) => Math.max(0, current - 1))}
                   className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
                 >
-                  {locale === 'vi' ? 'Truoc' : 'Previous'}
+                  {locale === 'vi' ? 'Trước' : 'Previous'}
                 </button>
                 <span className="text-sm text-gray-500">
                   {ordersPage + 1} / {ordersTotalPages}

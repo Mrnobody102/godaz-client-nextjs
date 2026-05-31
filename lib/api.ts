@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import { Product } from '@/lib/constants/products';
-import { Order } from '@/stores/orderStore';
+import { Order, normalizeOrderStatus } from '@/stores/orderStore';
 
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
@@ -324,7 +324,7 @@ function toOrder(order: ApiOrderResponse): Order {
     id: order.id,
     date: order.date,
     total: Number(order.total),
-    status: (order.status || '').toLowerCase() as any,
+    status: normalizeOrderStatus((order.status || '').toLowerCase()),
     customer: order.customer,
     paymentMethod: order.paymentMethod,
     items: order.items.map((item) => ({

@@ -198,7 +198,7 @@ export default function CheckoutClient() {
     if (paymentMethod !== 'cod' && !user) {
       setError(
         locale === 'vi'
-          ? 'Vui long dang nhap de thanh toan truc tuyen.'
+          ? 'Vui lòng đăng nhập để thanh toán trực tuyến.'
           : 'Please sign in to use online payment.'
       );
       setIsAuthModalOpen(true);
@@ -504,7 +504,7 @@ export default function CheckoutClient() {
                         {label}
                         {isOnlineGateway && !gatewayEnabled[value] && (
                           <span className="ml-2 text-xs text-gray-500">
-                            {locale === 'vi' ? '(chua cau hinh)' : '(not configured)'}
+                            {locale === 'vi' ? '(chưa cấu hình)' : '(not configured)'}
                           </span>
                         )}
                       </span>
