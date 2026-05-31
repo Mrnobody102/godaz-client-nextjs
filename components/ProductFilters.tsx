@@ -338,19 +338,19 @@ export function ProductFilters(props: ProductFiltersProps) {
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="right" className="p-0">
-          <SheetHeader className="border-b px-4 py-3"><SheetTitle>{tSearch('filters')}</SheetTitle></SheetHeader>
-          <div className="flex-1 overflow-auto p-4 space-y-6">
+        <SheetContent side="right" className="p-0 flex flex-col gap-0 w-[85vw] sm:w-[400px]">
+          <SheetHeader className="border-b px-4 py-4 shrink-0 bg-white z-10"><SheetTitle>{tSearch('filters')}</SheetTitle></SheetHeader>
+          <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50">
             {categoriesBlock}
             {priceBlock}
             <div className="space-y-3">
               {checkboxesBlock}
             </div>
           </div>
-          <SheetFooter className="border-t">
-            <div className="grid grid-cols-2 gap-2">
-              <button type="button" onClick={() => setMobileOpen(false)} className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50">{tSearch('apply')}</button>
-              <button type="button" onClick={() => { props.clearFilters(); setMobileOpen(false); }} className="h-11 rounded-xl bg-amber-900 px-4 text-sm font-medium text-white hover:bg-amber-800">{tSearch('clearFilters')}</button>
+          <SheetFooter className="border-t shrink-0 p-4 bg-white z-10">
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <button type="button" onClick={() => setMobileOpen(false)} className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm">{tSearch('apply')}</button>
+              <button type="button" onClick={() => { props.clearFilters(); setMobileOpen(false); }} className="h-11 rounded-xl bg-amber-900 px-4 text-sm font-medium text-white hover:bg-amber-800 shadow-sm">{tSearch('clearFilters')}</button>
             </div>
           </SheetFooter>
         </SheetContent>
