@@ -1,12 +1,10 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
-import { Product } from '@/lib/constants/products';
+import type { Product } from '@/lib/constants/products';
 import {
-  Order,
-  OrderEvent,
-  OrderStatus,
   normalizeOrderStatus,
   normalizePaymentStatus,
 } from '@/stores/orderStore';
+import type { Order, OrderEvent, OrderStatus } from '@/stores/orderStore';
 
 const api: AxiosInstance = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',

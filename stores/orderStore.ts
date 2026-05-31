@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { Product } from '@/lib/constants/products';
+import type { Product } from '@/lib/constants/products';
 
 export interface OrderItem extends Product {
   quantity: number;
