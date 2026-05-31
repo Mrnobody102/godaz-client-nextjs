@@ -235,6 +235,58 @@ export function ProductFilters(props: ProductFiltersProps) {
     </div>
   );
 
+  const categoriesBlock = (
+    <div>
+      <p className="mb-2 text-xs font-medium text-gray-500">{tSearch('all')}</p>
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => {
+            props.setSelectedCategory(null);
+            props.resetToFirstPage();
+          }}
+          className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+            props.selectedCategory === null
+              ? 'bg-amber-900 text-white'
+              : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'
+          }`}
+        >
+          {tSearch('all')}
+        </button>
+        {props.categories.map((category) => (
+          <button
+            key={category.value}
+            type="button"
+            onClick={() => {
+              props.setSelectedCategory(category.value);
+              props.resetToFirstPage();
+            }}
+            className={`px-3 py-1.5 rounded-full text-xs font-medium ${
+              props.selectedCategory === category.value
+                ? 'bg-amber-900 text-white'
+                : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'
+            }`}
+          >
+            {category.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+
+  const checkboxesBlock = (
+    <>
+      <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
+        <input type="checkbox" checked={props.inStockOnly} onChange={(e)=>{props.setInStockOnly(e.target.checked);props.resetToFirstPage();}} className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"/>
+        {tSearch('inStock')}
+      </label>
+      <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
+        <input type="checkbox" checked={props.featuredOnly} onChange={(e)=>{props.setFeaturedOnly(e.target.checked);props.resetToFirstPage();}} className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"/>
+        {tSearch('featured')}
+      </label>
+    </>
+  );
+
   return (
     <>
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:hidden">
@@ -279,60 +331,20 @@ export function ProductFilters(props: ProductFiltersProps) {
         )}
         {hasActiveFilters && filterChips}
 
-        <div>
-          <p className="mb-2 text-xs font-medium text-gray-500">{tSearch('all')}</p>
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => {
-                props.setSelectedCategory(null);
-                props.resetToFirstPage();
-              }}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                props.selectedCategory === null
-                  ? 'bg-amber-900 text-white'
-                  : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'
-              }`}
-            >
-              {tSearch('all')}
-            </button>
-            {props.categories.map((category) => (
-              <button
-                key={category.value}
-                type="button"
-                onClick={() => {
-                  props.setSelectedCategory(category.value);
-                  props.resetToFirstPage();
-                }}
-                className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-                  props.selectedCategory === category.value
-                    ? 'bg-amber-900 text-white'
-                    : 'bg-white text-gray-700 border border-gray-200 hover:bg-amber-50'
-                }`}
-              >
-                {category.label}
-              </button>
-            ))}
-          </div>
-        </div>
-
+        {categoriesBlock}
         {priceBlock}
-
-        <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
-          <input type="checkbox" checked={props.inStockOnly} onChange={(e)=>{props.setInStockOnly(e.target.checked);props.resetToFirstPage();}} className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"/>
-          {tSearch('inStock')}
-        </label>
-        <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
-          <input type="checkbox" checked={props.featuredOnly} onChange={(e)=>{props.setFeaturedOnly(e.target.checked);props.resetToFirstPage();}} className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"/>
-          {tSearch('featured')}
-        </label>
+        {checkboxesBlock}
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="right" className="p-0">
-          <SheetHeader className="border-b"><SheetTitle>{tSearch('filters')}</SheetTitle></SheetHeader>
-          <div className="flex-1 overflow-auto p-4 space-y-4">
+          <SheetHeader className="border-b px-4 py-3"><SheetTitle>{tSearch('filters')}</SheetTitle></SheetHeader>
+          <div className="flex-1 overflow-auto p-4 space-y-6">
+            {categoriesBlock}
             {priceBlock}
+            <div className="space-y-3">
+              {checkboxesBlock}
+            </div>
           </div>
           <SheetFooter className="border-t">
             <div className="grid grid-cols-2 gap-2">

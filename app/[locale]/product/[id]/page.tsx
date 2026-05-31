@@ -6,11 +6,24 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+import { fetchProduct, toProduct } from '@/lib/api';
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const initialProduct = handicraftProducts.find((product) => String(product.id) === id);
+  
+  let productName = 'Sản phẩm';
+  try {
+    const apiProduct = await fetchProduct(id);
+    productName = apiProduct.name;
+  } catch (error) {
+    const fallbackProduct = handicraftProducts.find((product) => String(product.id) === id);
+    if (fallbackProduct) {
+      productName = fallbackProduct.name;
+    }
+  }
+
   return {
-    title: initialProduct ? initialProduct.name : 'Sản phẩm',
+    title: productName,
   };
 }
 
