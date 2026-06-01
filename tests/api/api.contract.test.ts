@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { getApiErrorMessage, toProduct } from '@/lib/api';
-import { normalizeOrderStatus, normalizePaymentStatus } from '@/stores/orderStore';
+import { getApiErrorMessage, toProduct } from '../../lib/api';
+import { normalizeOrderStatus, normalizePaymentStatus } from '../../stores/orderStore';
 
 describe('api transformers and errors', () => {
   it('maps api product to ui product correctly', () => {
