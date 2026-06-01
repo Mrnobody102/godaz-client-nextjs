@@ -289,7 +289,7 @@ export default function CheckoutClient() {
           </Link>
         </div>
 
-        <h1 className="text-3xl font-bold text-gray-900 mb-8">{t('title')}</h1>
+        <h1 data-testid="checkout-title" className="text-3xl font-bold text-gray-900 mb-8">{t('title')}</h1>
 
         {!user && (
           <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 flex items-start gap-3">
@@ -323,7 +323,7 @@ export default function CheckoutClient() {
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-2/3">
             <form id="checkout-form" onSubmit={handleCheckout} className="space-y-8">
-              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
+              <div data-testid="checkout-shipping-section" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('shipping')}</h2>
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -425,7 +425,7 @@ export default function CheckoutClient() {
                 </div>
               </div>
 
-              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
+              <div data-testid="checkout-payment-section" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('payment')}</h2>
                 <div className="space-y-4">
                   {[
@@ -474,7 +474,7 @@ export default function CheckoutClient() {
           </div>
 
           <div className="w-full lg:w-1/3">
-            <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
+            <div data-testid="checkout-order-summary" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
                 {locale === 'vi' ? 'Tóm tắt đơn hàng' : 'Order Summary'}
               </h2>
@@ -506,6 +506,7 @@ export default function CheckoutClient() {
                 </div>
               </div>
               <button
+                data-testid="checkout-submit"
                 type="submit"
                 form="checkout-form"
                 disabled={cartItems.length === 0 || isSubmitting || hasStockIssue}

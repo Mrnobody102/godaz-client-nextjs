@@ -18,6 +18,7 @@ interface User {
   avatarUrl?: string | null;
   phone?: string | null;
   province?: string | null;
+  district?: string | null;
   ward?: string | null;
   detailAddress?: string | null;
 }
@@ -48,6 +49,7 @@ function toUser(user: AuthUser): User {
     avatarUrl: user.avatarUrl,
     phone: user.phone,
     province: user.province,
+    district: user.district,
     ward: user.ward,
     detailAddress: user.detailAddress,
   };

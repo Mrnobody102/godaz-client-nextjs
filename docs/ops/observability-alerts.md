@@ -37,6 +37,11 @@
 - Payment capture gap: `increase(commerce_payment_initiated_total[10m]) - increase(commerce_payment_captured_total[10m])`
 - Payment failure spike: `increase(commerce_payment_failed_total[10m])`
 - Reservation expiry spike: `increase(commerce_reservation_expired_total[10m])`
+- Stock release spike: `increase(commerce_stock_released_total[10m])`
+
+## Implemented Rule File
+- Backend Prometheus rule seeds live in `godas-server/alert-rules.yml`.
+- Local Prometheus loads them through `godas-server/prometheus.yml`.
 
 ## Dashboards
 - Commerce overview dashboard
