@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getApiErrorMessage, toProduct } from '../../lib/api';
+import {
+  getApiErrorMessage,
+  toAdminCategory,
+  toAdminProduct,
+  toProduct,
+} from '../../lib/api';
 import { normalizeOrderStatus, normalizePaymentStatus } from '../../stores/orderStore';
 
 describe('api transformers and errors', () => {
@@ -39,6 +44,47 @@ describe('api transformers and errors', () => {
 
     expect(mapped.price).toBe(98000);
     expect(typeof mapped.price).toBe('number');
+  });
+
+  it('maps admin product response with numeric price', () => {
+    const mapped = toAdminProduct({
+      id: 10,
+      name: 'Admin Product',
+      slug: 'admin-product',
+      categoryId: 3,
+      category: 'Gom Su',
+      categorySlug: 'gom-su',
+      categoryActive: true,
+      price: '250000.00',
+      unit: 'item',
+      imageUrl: 'https://example.com/admin.jpg',
+      description: 'admin desc',
+      stock: 12,
+      featured: false,
+      active: true,
+      createdAt: '2026-06-01T00:00:00Z',
+      updatedAt: '2026-06-01T00:00:00Z',
+    });
+
+    expect(mapped.price).toBe(250000);
+    expect(mapped.categoryId).toBe(3);
+    expect(mapped.active).toBe(true);
+  });
+
+  it('maps admin category response without dropping active state', () => {
+    const mapped = toAdminCategory({
+      id: 5,
+      name: 'Inactive',
+      slug: 'inactive',
+      description: null,
+      imageUrl: null,
+      active: false,
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    expect(mapped.active).toBe(false);
+    expect(mapped.slug).toBe('inactive');
   });
 
   it('returns fallback message for unknown errors', () => {

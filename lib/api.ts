@@ -88,6 +88,71 @@ export interface ProductSearchResponse {
   size: number;
 }
 
+export interface ApiAdminCategory {
+  id: number;
+  name: string;
+  slug: string;
+  description?: string | null;
+  imageUrl?: string | null;
+  active: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export type AdminCategory = ApiAdminCategory;
+
+export interface ApiAdminProduct {
+  id: number;
+  name: string;
+  slug: string;
+  categoryId: number;
+  category: string;
+  categorySlug: string;
+  categoryActive: boolean;
+  price: number | string;
+  unit: string;
+  imageUrl?: string | null;
+  description?: string | null;
+  stock: number;
+  featured: boolean;
+  active: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface AdminProduct extends Omit<ApiAdminProduct, 'price'> {
+  price: number;
+}
+
+export interface AdminProductPageResponse {
+  products: AdminProduct[];
+  totalElements: number;
+  totalPages: number;
+  page: number;
+  size: number;
+}
+
+export interface AdminProductPayload {
+  name: string;
+  slug?: string;
+  categoryId: number;
+  description?: string;
+  price: number;
+  stock: number;
+  unit: string;
+  imageUrl?: string;
+  featured: boolean;
+  active: boolean;
+}
+
+export interface AdminCategoryPayload {
+  name: string;
+  slug?: string;
+  description?: string;
+  imageUrl?: string;
+  active: boolean;
+}
+
 export interface CheckoutPayload {
   items: Array<{
     productId: number;
@@ -197,6 +262,17 @@ export function toProduct(product: ApiProduct): Product {
   };
 }
 
+export function toAdminProduct(product: ApiAdminProduct): AdminProduct {
+  return {
+    ...product,
+    price: Number(product.price),
+  };
+}
+
+export function toAdminCategory(category: ApiAdminCategory): AdminCategory {
+  return category;
+}
+
 export async function loginRequest(username: string, password: string) {
   const { data } = await api.post<LoginResponse>('/login', {
     username,
@@ -252,6 +328,100 @@ export async function fetchProducts(params?: {
 export async function fetchProduct(id: string | number) {
   const { data } = await api.get<ApiProduct>(`/api/products/${id}`);
   return data;
+}
+
+export async function fetchAdminProducts(params?: {
+  search?: string;
+  category?: string;
+  active?: boolean | 'all';
+  sort?: string;
+  page?: number;
+  size?: number;
+}) {
+  const { data } = await api.get<{
+    products: ApiAdminProduct[];
+    totalElements: number;
+    totalPages: number;
+    page: number;
+    size: number;
+  }>('/api/admin/products', {
+    params: {
+      search: params?.search || undefined,
+      category: params?.category || undefined,
+      active:
+        params?.active === 'all' || typeof params?.active === 'undefined'
+          ? undefined
+          : params.active,
+      sort: params?.sort || 'newest',
+      page: params?.page ?? 0,
+      size: params?.size ?? 20,
+    },
+  });
+  return {
+    ...data,
+    products: data.products.map(toAdminProduct),
+  };
+}
+
+export async function fetchAdminProduct(id: string | number) {
+  const { data } = await api.get<ApiAdminProduct>(`/api/admin/products/${id}`);
+  return toAdminProduct(data);
+}
+
+export async function createAdminProduct(payload: AdminProductPayload) {
+  const { data } = await api.post<ApiAdminProduct>('/api/admin/products', payload, {
+    headers: {
+      'X-Idempotency-Key': getIdempotencyKey('admin-product'),
+    },
+  });
+  return toAdminProduct(data);
+}
+
+export async function updateAdminProduct(
+  id: string | number,
+  payload: AdminProductPayload
+) {
+  const { data } = await api.put<ApiAdminProduct>(`/api/admin/products/${id}`, payload);
+  return toAdminProduct(data);
+}
+
+export async function deleteAdminProduct(id: string | number) {
+  const { data } = await api.delete<ApiAdminProduct>(`/api/admin/products/${id}`);
+  return toAdminProduct(data);
+}
+
+export async function fetchAdminCategories(params?: { active?: boolean | 'all' }) {
+  const { data } = await api.get<ApiAdminCategory[]>('/api/admin/categories', {
+    params: {
+      active:
+        params?.active === 'all' || typeof params?.active === 'undefined'
+          ? undefined
+          : params.active,
+    },
+  });
+  return data.map(toAdminCategory);
+}
+
+export async function createAdminCategory(payload: AdminCategoryPayload) {
+  const { data } = await api.post<ApiAdminCategory>('/api/admin/categories', payload, {
+    headers: {
+      'X-Idempotency-Key': getIdempotencyKey('admin-category'),
+    },
+  });
+  return toAdminCategory(data);
+}
+
+export async function updateAdminCategory(
+  id: string | number,
+  payload: AdminCategoryPayload
+) {
+  const { data } = await api.put<ApiAdminCategory>(`/api/admin/categories/${id}`, payload);
+  return toAdminCategory(data);
+}
+
+export async function deleteAdminCategory(id: string | number) {
+  const { data } = await api.delete<ApiAdminCategory>(`/api/admin/categories/${id}`);
+  return toAdminCategory(data);
 }
 
 export async function fetchProductReviews(productId: string | number, page = 0, size = 5) {

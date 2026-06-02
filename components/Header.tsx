@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  FolderTree,
   Globe,
   Heart,
   LogOut,
@@ -148,6 +149,16 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                         <Package className="w-4 h-4" />
                         {locale === 'vi' ? 'Đơn hàng của tôi' : 'My Orders'}
                       </Link>
+                      {user.role === 'ADMIN' && (
+                        <Link
+                          href="/admin/products"
+                          onClick={() => setUserMenuOpen(false)}
+                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                        >
+                          <FolderTree className="w-4 h-4" />
+                          Catalog Operations
+                        </Link>
+                      )}
                       <button
                         type="button"
                         onClick={handleLogout}

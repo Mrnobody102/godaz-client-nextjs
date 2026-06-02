@@ -157,6 +157,12 @@ export function AuthModal({
   );
 
   useEffect(() => {
+    if (window.google) {
+      setIsGoogleReady(true);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!isOpen || !googleClientId || !isGoogleReady || !window.google || !googleButtonRef.current) {
       return;
     }
@@ -188,6 +194,7 @@ export function AuthModal({
           src="https://accounts.google.com/gsi/client"
           strategy="afterInteractive"
           onLoad={() => setIsGoogleReady(true)}
+          onReady={() => setIsGoogleReady(true)}
         />
       )}
 
