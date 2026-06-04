@@ -1,5 +1,10 @@
 export interface Product {
   id: string | number;
+  cartKey?: string;
+  variantId?: number | null;
+  variantName?: string | null;
+  sku?: string | null;
+  brand?: string | null;
   name: string;
   category: string;
   categorySlug?: string;
@@ -9,6 +14,26 @@ export interface Product {
   description: string;
   stock?: number;
   featured?: boolean;
+  galleryImages?: ProductImage[];
+  variants?: ProductVariant[];
+}
+
+export interface ProductImage {
+  id?: number | null;
+  imageUrl: string;
+  altText?: string | null;
+  sortOrder?: number | null;
+}
+
+export interface ProductVariant {
+  id: number;
+  name: string;
+  sku?: string | null;
+  price: number;
+  stock: number;
+  imageUrl?: string | null;
+  active: boolean;
+  sortOrder?: number | null;
 }
 
 export const handicraftProducts: Product[] = [

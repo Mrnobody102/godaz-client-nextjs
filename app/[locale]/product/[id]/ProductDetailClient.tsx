@@ -42,6 +42,7 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
 
   const {
     items: cartItems,
@@ -130,15 +131,27 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
   };
 
   const isWished = product ? isInWishlist(product.id) : false;
-  const stock = product?.stock ?? 999;
+  const activeVariants = product?.variants?.filter((variant) => variant.active) || [];
+  const selectedVariant =
+    activeVariants.find((variant) => variant.id === selectedVariantId) || null;
+  const displayImage = selectedVariant?.imageUrl || product?.image || '';
+  const stock = selectedVariant?.stock ?? product?.stock ?? 999;
   const isOutOfStock = stock <= 0;
+  const galleryImages = product
+    ? [
+        product.image,
+        ...(product.galleryImages || []).map((image) => image.imageUrl),
+        ...activeVariants
+          .map((variant) => variant.imageUrl)
+          .filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
+      ].filter((imageUrl, index, images) => imageUrl && images.indexOf(imageUrl) === index)
+    : [];
 
   const priceNum = useMemo(() => {
     if (!product) return 0;
-    return typeof product.price === 'string'
-      ? parseFloat(product.price)
-      : product.price;
-  }, [product]);
+    const price = selectedVariant?.price ?? product.price;
+    return typeof price === 'string' ? parseFloat(price) : price;
+  }, [product, selectedVariant]);
 
   const formatted = new Intl.NumberFormat(locale, {
     maximumFractionDigits: 0,
@@ -159,7 +172,19 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
   const handleAddToCart = () => {
     if (!product || isOutOfStock) return;
 
-    const added = addCartItem(product, quantity);
+    const cartProduct: Product = selectedVariant
+      ? {
+          ...product,
+          cartKey: `${product.id}:${selectedVariant.id}`,
+          variantId: selectedVariant.id,
+          variantName: selectedVariant.name,
+          sku: selectedVariant.sku ?? product.sku ?? null,
+          price: selectedVariant.price,
+          stock: selectedVariant.stock,
+          image: selectedVariant.imageUrl || product.image,
+        }
+      : product;
+    const added = addCartItem(cartProduct, quantity);
     if (!added) {
       toast.error(t('stockLimit'));
       return;
@@ -175,6 +200,11 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
 
   const handleIncreaseQuantity = () => {
     setQuantity((current) => Math.min(current + 1, stock));
+  };
+
+  const handleSelectVariant = (variantId: number | null) => {
+    setSelectedVariantId(variantId);
+    setQuantity(1);
   };
 
   return (
@@ -216,13 +246,36 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
             <div className="bg-white rounded-3xl shadow-xl overflow-hidden flex flex-col md:flex-row border border-gray-100">
               <div className="relative h-96 md:h-auto md:w-1/2 bg-gray-100">
                 <Image
-                  src={product.image}
+                  src={displayImage}
                   alt={product.name}
                   fill
                   className="object-cover transition-transform duration-500 hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
                   priority
                 />
+                {galleryImages.length > 1 && (
+                  <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto rounded-xl bg-white/85 p-2 backdrop-blur">
+                    {galleryImages.map((imageUrl) => (
+                      <button
+                        key={imageUrl}
+                        type="button"
+                        onClick={() => {
+                          if (imageUrl === product.image) {
+                            handleSelectVariant(null);
+                            return;
+                          }
+                          const variant = activeVariants.find((item) => item.imageUrl === imageUrl);
+                          if (variant) handleSelectVariant(variant.id);
+                        }}
+                        className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 ${
+                          displayImage === imageUrl ? 'border-amber-900' : 'border-white'
+                        }`}
+                      >
+                        <Image src={imageUrl} alt="" fill className="object-cover" sizes="56px" />
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="p-8 md:p-12 md:w-1/2 flex flex-col justify-center">
@@ -241,8 +294,44 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                 </div>
                 {typeof product.stock === 'number' && (
                   <p className="text-sm text-gray-500 mb-8">
-                    {locale === 'vi' ? 'Tồn kho:' : 'In stock:'} {product.stock}
+                    {locale === 'vi' ? 'Tồn kho:' : 'In stock:'} {stock}
                   </p>
+                )}
+
+                {activeVariants.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">
+                      {locale === 'vi' ? 'Phiên bản' : 'Variant'}
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectVariant(null)}
+                        className={`rounded-lg border px-3 py-2 text-sm font-medium ${
+                          selectedVariantId === null
+                            ? 'border-amber-900 bg-amber-50 text-amber-900'
+                            : 'border-gray-200 text-gray-700'
+                        }`}
+                      >
+                        {locale === 'vi' ? 'Mặc định' : 'Default'}
+                      </button>
+                      {activeVariants.map((variant) => (
+                        <button
+                          key={variant.id}
+                          type="button"
+                          onClick={() => handleSelectVariant(variant.id)}
+                          disabled={variant.stock <= 0}
+                          className={`rounded-lg border px-3 py-2 text-sm font-medium disabled:opacity-45 ${
+                            selectedVariantId === variant.id
+                              ? 'border-amber-900 bg-amber-50 text-amber-900'
+                              : 'border-gray-200 text-gray-700'
+                          }`}
+                        >
+                          {variant.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 <div className="mb-10">

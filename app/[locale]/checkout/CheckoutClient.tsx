@@ -227,6 +227,10 @@ export default function CheckoutClient() {
     const numericItems = cartItems
       .map((item) => ({
         productId: Number(item.id),
+        variantId:
+          typeof item.variantId === 'number' && Number.isFinite(item.variantId)
+            ? item.variantId
+            : undefined,
         quantity: item.quantity,
       }))
       .filter((item) => Number.isFinite(item.productId));
@@ -381,6 +385,10 @@ export default function CheckoutClient() {
       const numericItems = cartItems
         .map((item) => ({
           productId: Number(item.id),
+          variantId:
+            typeof item.variantId === 'number' && Number.isFinite(item.variantId)
+              ? item.variantId
+              : undefined,
           quantity: item.quantity,
         }))
         .filter((item) => Number.isFinite(item.productId));
@@ -771,6 +779,9 @@ export default function CheckoutClient() {
                   <div key={item.id} className="flex justify-between items-center text-sm">
                     <div className="flex-1 pr-4">
                       <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                      {item.variantName && (
+                        <p className="text-xs text-gray-500 truncate">{item.variantName}</p>
+                      )}
                       <p className="text-gray-500">
                         {locale === 'vi' ? 'SL:' : 'Qty:'} {item.quantity}
                       </p>

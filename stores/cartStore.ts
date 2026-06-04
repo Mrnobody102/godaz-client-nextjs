@@ -14,8 +14,12 @@ interface CartState {
   clearCart: () => void;
 }
 
-function isSameProduct(idA: string | number, idB: string | number) {
-  return String(idA) === String(idB);
+function itemKey(item: Pick<Product, 'id' | 'cartKey'>) {
+  return item.cartKey || String(item.id);
+}
+
+function isSameProduct(itemA: Pick<Product, 'id' | 'cartKey'>, itemB: Pick<Product, 'id' | 'cartKey'>) {
+  return itemKey(itemA) === itemKey(itemB);
 }
 
 function clampQuantity(item: Product, quantity: number) {
@@ -31,7 +35,7 @@ const useCartStore = create<CartState>()(
       addItem: (item, qty = 1) => {
         let added = false;
         set((state) => {
-          const existingItem = state.items.find((i) => isSameProduct(i.id, item.id));
+          const existingItem = state.items.find((i) => isSameProduct(i, item));
           if (existingItem) {
             const nextQuantity = clampQuantity(
               existingItem,
@@ -40,7 +44,7 @@ const useCartStore = create<CartState>()(
             added = nextQuantity > existingItem.quantity;
             return {
               items: state.items.map((i) =>
-                isSameProduct(i.id, item.id)
+                isSameProduct(i, item)
                   ? { ...i, quantity: nextQuantity }
                   : i
               ),
@@ -56,12 +60,12 @@ const useCartStore = create<CartState>()(
       },
       removeItem: (id) =>
         set((state) => ({
-          items: state.items.filter((item) => !isSameProduct(item.id, id)),
+          items: state.items.filter((item) => itemKey(item) !== String(id)),
         })),
       updateQuantity: (id, quantity) =>
         set((state) => ({
           items: state.items.flatMap((item) => {
-            if (!isSameProduct(item.id, id)) return [item];
+            if (itemKey(item) !== String(id)) return [item];
 
             const nextQuantity = clampQuantity(item, quantity);
             return nextQuantity > 0 ? [{ ...item, quantity: nextQuantity }] : [];

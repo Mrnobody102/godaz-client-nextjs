@@ -71,12 +71,34 @@ export interface ApiProduct {
   name: string;
   category: string;
   categorySlug: string;
+  sku?: string | null;
+  brand?: string | null;
   price: number | string;
   unit: string;
   image: string;
   description: string;
   stock: number;
   featured: boolean;
+  galleryImages?: ApiProductImage[];
+  variants?: ApiProductVariant[];
+}
+
+export interface ApiProductImage {
+  id?: number | null;
+  imageUrl: string;
+  altText?: string | null;
+  sortOrder?: number | null;
+}
+
+export interface ApiProductVariant {
+  id: number;
+  name: string;
+  sku?: string | null;
+  price: number | string;
+  stock: number;
+  imageUrl?: string | null;
+  active: boolean;
+  sortOrder?: number | null;
 }
 
 export interface ProductSearchResponse {
@@ -105,6 +127,8 @@ export interface ApiAdminProduct {
   id: number;
   name: string;
   slug: string;
+  sku?: string | null;
+  brand?: string | null;
   categoryId: number;
   category: string;
   categorySlug: string;
@@ -116,12 +140,15 @@ export interface ApiAdminProduct {
   stock: number;
   featured: boolean;
   active: boolean;
+  galleryImages?: ApiProductImage[];
+  variants?: ApiProductVariant[];
   createdAt?: string | null;
   updatedAt?: string | null;
 }
 
-export interface AdminProduct extends Omit<ApiAdminProduct, 'price'> {
+export interface AdminProduct extends Omit<ApiAdminProduct, 'price' | 'variants'> {
   price: number;
+  variants?: Product['variants'];
 }
 
 export interface AdminProductPageResponse {
@@ -135,6 +162,8 @@ export interface AdminProductPageResponse {
 export interface AdminProductPayload {
   name: string;
   slug?: string;
+  sku?: string;
+  brand?: string;
   categoryId: number;
   description?: string;
   price: number;
@@ -143,6 +172,17 @@ export interface AdminProductPayload {
   imageUrl?: string;
   featured: boolean;
   active: boolean;
+  galleryImages?: ApiProductImage[];
+  variants?: Array<{
+    id?: number | null;
+    name: string;
+    sku?: string | null;
+    price: number;
+    stock: number;
+    imageUrl?: string | null;
+    active?: boolean;
+    sortOrder?: number | null;
+  }>;
 }
 
 export interface AdminCategoryPayload {
@@ -241,6 +281,7 @@ export interface UserAddressPayload {
 export interface CheckoutPayload {
   items: Array<{
     productId: number;
+    variantId?: number;
     quantity: number;
   }>;
   customer: {
@@ -309,7 +350,10 @@ export interface ProductReviewPageResponse {
 
 interface ApiOrderItem {
   productId: number;
+  variantId?: number | null;
   name: string;
+  variantName?: string | null;
+  sku?: string | null;
   category: string;
   price: number | string;
   unit: string;
@@ -367,12 +411,16 @@ export function toProduct(product: ApiProduct): Product {
     name: product.name,
     category: product.category,
     categorySlug: product.categorySlug,
+    sku: product.sku ?? null,
+    brand: product.brand ?? null,
     price: Number(product.price),
     unit: product.unit,
     image: product.image,
     description: product.description,
     stock: product.stock,
     featured: product.featured,
+    galleryImages: product.galleryImages || [],
+    variants: (product.variants || []).map(toProductVariant),
   };
 }
 
@@ -380,6 +428,14 @@ export function toAdminProduct(product: ApiAdminProduct): AdminProduct {
   return {
     ...product,
     price: Number(product.price),
+    variants: (product.variants || []).map(toProductVariant),
+  };
+}
+
+function toProductVariant(variant: ApiProductVariant): NonNullable<Product['variants']>[number] {
+  return {
+    ...variant,
+    price: Number(variant.price),
   };
 }
 
@@ -822,6 +878,10 @@ function toOrder(order: ApiOrderResponse): Order {
     events: (order.events || []).map(toOrderEvent),
     items: order.items.map((item) => ({
       id: item.productId,
+      cartKey: item.variantId ? `${item.productId}:${item.variantId}` : String(item.productId),
+      variantId: item.variantId ?? null,
+      variantName: item.variantName ?? null,
+      sku: item.sku ?? null,
       name: item.name,
       category: item.category,
       price: Number(item.price),

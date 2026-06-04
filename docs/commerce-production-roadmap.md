@@ -161,7 +161,7 @@ Acceptance:
 | Shipping method + fee | Done | Blocker |
 | Coupon/discount | Done | Important |
 | Address book | Done | Important |
-| Product variants/gallery/SKU/brand | Missing | Important tùy ngành hàng |
+| Product variants/gallery/SKU/brand | Done in Mega Batch | Important tùy ngành hàng |
 | Customer order detail route | Done | Quick win |
 | Server cart + guest/auth merge | Missing | Later |
 | Admin dashboard/analytics | Missing | Later |

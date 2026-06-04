@@ -43,12 +43,16 @@ type ActiveFilter = 'all' | 'true' | 'false';
 interface ProductFormState {
   name: string;
   slug: string;
+  sku: string;
+  brand: string;
   categoryId: string;
   description: string;
   price: string;
   stock: string;
   unit: string;
   imageUrl: string;
+  galleryImagesJson: string;
+  variantsJson: string;
   featured: boolean;
   active: boolean;
 }
@@ -64,12 +68,16 @@ interface CategoryFormState {
 const emptyProductForm = (categoryId = ''): ProductFormState => ({
   name: '',
   slug: '',
+  sku: '',
+  brand: '',
   categoryId,
   description: '',
   price: '',
   stock: '0',
   unit: 'item',
   imageUrl: '',
+  galleryImagesJson: '[]',
+  variantsJson: '[]',
   featured: false,
   active: true,
 });
@@ -91,12 +99,25 @@ function productToPayload(product: AdminProduct, active = product.active): Admin
   return {
     name: product.name,
     slug: product.slug,
+    sku: product.sku || '',
+    brand: product.brand || '',
     categoryId: product.categoryId,
     description: product.description || '',
     price: product.price,
     stock: product.stock,
     unit: product.unit,
     imageUrl: product.imageUrl || '',
+    galleryImages: product.galleryImages || [],
+    variants: (product.variants || []).map((variant) => ({
+      id: variant.id,
+      name: variant.name,
+      sku: variant.sku || '',
+      price: variant.price,
+      stock: variant.stock,
+      imageUrl: variant.imageUrl || '',
+      active: variant.active,
+      sortOrder: variant.sortOrder ?? 0,
+    })),
     featured: product.featured,
     active,
   };
@@ -194,12 +215,16 @@ export default function AdminProductsClient() {
     setProductForm({
       name: product.name,
       slug: product.slug,
+      sku: product.sku || '',
+      brand: product.brand || '',
       categoryId: String(product.categoryId),
       description: product.description || '',
       price: String(product.price),
       stock: String(product.stock),
       unit: product.unit,
       imageUrl: product.imageUrl || '',
+      galleryImagesJson: JSON.stringify(product.galleryImages || [], null, 2),
+      variantsJson: JSON.stringify(product.variants || [], null, 2),
       featured: product.featured,
       active: product.active,
     });
@@ -225,21 +250,34 @@ export default function AdminProductsClient() {
     const categoryId = Number(productForm.categoryId);
     const price = Number(productForm.price);
     const stock = Number(productForm.stock);
+    let galleryImages: AdminProductPayload['galleryImages'];
+    let variants: AdminProductPayload['variants'];
 
     if (!categoryId || !Number.isFinite(price) || !Number.isFinite(stock)) {
       setError('Please enter a valid category, price, and stock value.');
+      return null;
+    }
+    try {
+      galleryImages = JSON.parse(productForm.galleryImagesJson || '[]');
+      variants = JSON.parse(productForm.variantsJson || '[]');
+    } catch {
+      setError('Gallery images and variants must be valid JSON arrays.');
       return null;
     }
 
     return {
       name: productForm.name.trim(),
       slug: productForm.slug.trim(),
+      sku: productForm.sku.trim(),
+      brand: productForm.brand.trim(),
       categoryId,
       description: productForm.description.trim(),
       price,
       stock,
       unit: productForm.unit.trim(),
       imageUrl: productForm.imageUrl.trim(),
+      galleryImages,
+      variants,
       featured: productForm.featured,
       active: productForm.active,
     };
@@ -603,6 +641,20 @@ export default function AdminProductsClient() {
                       placeholder="Slug"
                       className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm"
                     />
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        value={productForm.sku}
+                        onChange={(event) => setProductForm((current) => ({ ...current, sku: event.target.value }))}
+                        placeholder="SKU"
+                        className="h-10 rounded-lg border border-gray-300 px-3 text-sm"
+                      />
+                      <input
+                        value={productForm.brand}
+                        onChange={(event) => setProductForm((current) => ({ ...current, brand: event.target.value }))}
+                        placeholder="Brand"
+                        className="h-10 rounded-lg border border-gray-300 px-3 text-sm"
+                      />
+                    </div>
                     <select
                       required
                       value={productForm.categoryId}
@@ -655,6 +707,18 @@ export default function AdminProductsClient() {
                       onChange={(event) => setProductForm((current) => ({ ...current, imageUrl: event.target.value }))}
                       placeholder="Image URL"
                       className="h-10 w-full rounded-lg border border-gray-300 px-3 text-sm"
+                    />
+                    <textarea
+                      value={productForm.galleryImagesJson}
+                      onChange={(event) => setProductForm((current) => ({ ...current, galleryImagesJson: event.target.value }))}
+                      placeholder='Gallery JSON: [{"imageUrl":"https://...","altText":"","sortOrder":0}]'
+                      className="min-h-20 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs"
+                    />
+                    <textarea
+                      value={productForm.variantsJson}
+                      onChange={(event) => setProductForm((current) => ({ ...current, variantsJson: event.target.value }))}
+                      placeholder='Variants JSON: [{"name":"Large","sku":"SKU-L","price":100000,"stock":5,"active":true}]'
+                      className="min-h-24 w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs"
                     />
                     <div className="grid grid-cols-2 gap-3 text-sm text-gray-700">
                       <label className="flex items-center gap-2 rounded-lg border border-gray-200 px-3 py-2">

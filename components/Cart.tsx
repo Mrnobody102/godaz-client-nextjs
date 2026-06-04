@@ -61,10 +61,11 @@ export function Cart({
               {items.map((item) => {
                 const isAtStockLimit =
                   typeof item.stock === 'number' && item.quantity >= item.stock;
+                const key = item.cartKey || String(item.id);
 
                 return (
                   <div
-                    key={item.id}
+                    key={key}
                     className="flex gap-4 bg-gray-50 p-4 rounded-lg"
                   >
                     <Image
@@ -77,6 +78,9 @@ export function Cart({
 
                     <div className="flex-1">
                       <h3 className="text-sm text-gray-900 mb-1">{item.name}</h3>
+                      {item.variantName && (
+                        <p className="text-xs text-gray-500 mb-1">{item.variantName}</p>
+                      )}
                       <p className="text-amber-900 mb-2">
                         {(() => {
                           const price =
@@ -102,7 +106,7 @@ export function Cart({
                         <button
                           onClick={() =>
                             onUpdateQuantity(
-                              item.id,
+                              key,
                               Math.max(0, item.quantity - 1)
                             )
                           }
@@ -113,7 +117,7 @@ export function Cart({
                         <span className="w-8 text-center">{item.quantity}</span>
                         <button
                           onClick={() =>
-                            onUpdateQuantity(item.id, item.quantity + 1)
+                            onUpdateQuantity(key, item.quantity + 1)
                           }
                           disabled={isAtStockLimit}
                           className="p-1 hover:bg-gray-200 rounded transition disabled:opacity-40 disabled:cursor-not-allowed"
@@ -121,7 +125,7 @@ export function Cart({
                           <Plus className="w-4 h-4" />
                         </button>
                         <button
-                          onClick={() => onRemoveItem(item.id)}
+                          onClick={() => onRemoveItem(key)}
                           className="ml-auto text-red-600 hover:text-red-700 text-sm"
                         >
                           {t('remove')}
