@@ -308,6 +308,12 @@ export default function ProfileClient() {
                       {locale === 'vi' ? 'Thanh toán:' : 'Payment:'}
                     </span>
                     <p className="font-medium text-gray-900 uppercase">{order.paymentMethod}</p>
+                    <Link
+                      href={`/profile/orders/${order.id}`}
+                      className="mt-2 inline-block text-sm font-medium text-amber-900 hover:text-amber-700"
+                    >
+                      {locale === 'vi' ? 'Xem chi tiet' : 'View details'}
+                    </Link>
                   </div>
                 </div>
               </div>

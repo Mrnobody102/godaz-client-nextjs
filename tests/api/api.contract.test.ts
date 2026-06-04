@@ -4,7 +4,9 @@ import {
   getApiErrorMessage,
   toAdminCategory,
   toAdminProduct,
+  toCoupon,
   toProduct,
+  toShippingMethod,
 } from '../../lib/api';
 import { normalizeOrderStatus, normalizePaymentStatus } from '../../stores/orderStore';
 
@@ -85,6 +87,41 @@ describe('api transformers and errors', () => {
 
     expect(mapped.active).toBe(false);
     expect(mapped.slug).toBe('inactive');
+  });
+
+  it('maps shipping and coupon monetary fields to numbers', () => {
+    const shipping = toShippingMethod({
+      id: 1,
+      code: 'STANDARD',
+      name: 'Standard',
+      description: null,
+      fee: '30000.00',
+      freeThreshold: '1000000.00',
+      active: true,
+      sortOrder: 10,
+      createdAt: null,
+      updatedAt: null,
+    });
+    const coupon = toCoupon({
+      id: 2,
+      code: 'SAVE10',
+      type: 'percent',
+      value: '10.00',
+      minSubtotal: '100000.00',
+      maxDiscount: '50000.00',
+      usageLimit: 100,
+      usedCount: 3,
+      startsAt: null,
+      endsAt: null,
+      active: true,
+      createdAt: null,
+      updatedAt: null,
+    });
+
+    expect(shipping.fee).toBe(30000);
+    expect(shipping.freeThreshold).toBe(1000000);
+    expect(coupon.value).toBe(10);
+    expect(coupon.maxDiscount).toBe(50000);
   });
 
   it('returns fallback message for unknown errors', () => {

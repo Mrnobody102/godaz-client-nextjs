@@ -87,7 +87,7 @@ Không nên trộn Batch 2 vào Batch 1 release gate. Batch 2 là feature batch 
 
 ### Blocker 1 — Admin Catalog CRUD
 
-Trạng thái: Missing.
+Trạng thái: Done.
 
 Phạm vi đề xuất:
 - Category CRUD endpoints.
@@ -103,7 +103,7 @@ Acceptance:
 
 ### Blocker 2 — Shipping Method & Fee
 
-Trạng thái: Missing.
+Trạng thái: Done in Super Batch 2.
 
 Phạm vi đề xuất:
 - `shipping_methods` hoặc config table.
@@ -117,7 +117,7 @@ Acceptance:
 
 ### Important — Coupon/Discount
 
-Trạng thái: Missing.
+Trạng thái: Done in Super Batch 2.
 
 Phạm vi đề xuất:
 - Coupon entity: code, type, value, min subtotal, max discount, usage limit, active window.
@@ -130,7 +130,7 @@ Acceptance:
 
 ### Important — Address Book
 
-Trạng thái: Missing.
+Trạng thái: Done in Super Batch 2.
 
 Phạm vi đề xuất:
 - `user_addresses` table.
@@ -144,7 +144,7 @@ Acceptance:
 
 ### Quick Win — Customer Order Detail
 
-Trạng thái: Partial.
+Trạng thái: Done in Super Batch 2.
 
 Phạm vi đề xuất:
 - Route `/profile/orders/[id]`.
@@ -157,12 +157,12 @@ Acceptance:
 
 | Hạng Mục | Trạng Thái | Mức Chặn |
 | --- | --- | --- |
-| Admin product/category CRUD | Missing | Blocker |
-| Shipping method + fee | Missing | Blocker |
-| Coupon/discount | Missing | Important |
-| Address book | Missing | Important |
+| Admin product/category CRUD | Done | Blocker |
+| Shipping method + fee | Done | Blocker |
+| Coupon/discount | Done | Important |
+| Address book | Done | Important |
 | Product variants/gallery/SKU/brand | Missing | Important tùy ngành hàng |
-| Customer order detail route | Partial | Quick win |
+| Customer order detail route | Done | Quick win |
 | Server cart + guest/auth merge | Missing | Later |
 | Admin dashboard/analytics | Missing | Later |
 

@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
-import { AlertCircle, ArrowLeft } from 'lucide-react';
+import { AlertCircle, ArrowLeft, MapPin, Ticket, Truck, X } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,14 +11,22 @@ import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
 import { Link } from '@/i18n/routing';
-import useOrderStore, { Order } from '@/stores/orderStore';
+import useOrderStore from '@/stores/orderStore';
 import {
+  CheckoutQuote,
+  PaymentGatewayAvailability,
+  ShippingMethod,
+  UserAddress,
   createOrder,
   createPayment,
+  createUserAddress,
+  deleteUserAddress,
   fetchPaymentGateways,
+  fetchShippingMethods,
+  fetchUserAddresses,
   getApiErrorMessage,
-  isNetworkError,
-  PaymentGatewayAvailability,
+  quoteCheckout,
+  setDefaultUserAddress,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -29,6 +37,17 @@ interface LocationOption {
 
 function isValidPhone(phone: string) {
   return /^[0-9+\-\s().]{8,20}$/.test(phone.trim());
+}
+
+function addressToLine(address: UserAddress) {
+  return [
+    address.detailAddress,
+    address.ward,
+    address.district,
+    address.province,
+  ]
+    .filter(Boolean)
+    .join(', ');
 }
 
 export default function CheckoutClient() {
@@ -42,29 +61,40 @@ export default function CheckoutClient() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [quoteError, setQuoteError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState('cod');
-  
+
   const [provinces, setProvinces] = useState<LocationOption[]>([]);
   const [wards, setWards] = useState<LocationOption[]>([]);
   const [isLoadingAddress, setIsLoadingAddress] = useState(false);
+  const [addresses, setAddresses] = useState<UserAddress[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState('manual');
+  const [saveAddress, setSaveAddress] = useState(false);
 
-  const [formData, setFormData] = useState({ 
-    name: '', 
+  const [shippingMethods, setShippingMethods] = useState<ShippingMethod[]>([]);
+  const [shippingMethodCode, setShippingMethodCode] = useState('');
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState('');
+  const [quote, setQuote] = useState<CheckoutQuote | null>(null);
+
+  const [formData, setFormData] = useState({
+    name: '',
     email: '',
-    phone: '', 
+    phone: '',
     province: '',
+    district: '',
     ward: '',
     detailAddress: '',
-    note: ''
+    note: '',
   });
-  
+
   const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayAvailability[]>([]);
 
   const { items: cartItems, clearCart, updateQuantity, removeItem } = useCartStore();
   const { addOrder } = useOrderStore();
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  const total = cartItems.reduce((sum, item) => {
+  const subtotal = cartItems.reduce((sum, item) => {
     const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
     return sum + price * item.quantity;
   }, 0);
@@ -73,6 +103,10 @@ export default function CheckoutClient() {
   );
   const stockIssueNames = stockIssues.map((item) => item.name).join(', ');
   const hasStockIssue = stockIssues.length > 0;
+  const currency = useMemo(
+    () => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }),
+    [locale]
+  );
   const gatewayEnabled = useMemo(
     () =>
       paymentGateways.reduce<Record<string, boolean>>((result, gateway) => {
@@ -92,11 +126,24 @@ export default function CheckoutClient() {
         if (active) setPaymentGateways([]);
       });
 
+    fetchShippingMethods()
+      .then((methods) => {
+        if (!active) return;
+        setShippingMethods(methods);
+        setShippingMethodCode((current) => current || methods[0]?.code || '');
+      })
+      .catch(() => {
+        if (active) setShippingMethods([]);
+      });
+
     setIsLoadingAddress(true);
     fetch('https://provinces.open-api.vn/api/v2/p/')
       .then((res) => res.json())
       .then((data) => {
         if (active) setProvinces(data);
+      })
+      .catch(() => {
+        if (active) setProvinces([]);
       })
       .finally(() => {
         if (active) setIsLoadingAddress(false);
@@ -109,16 +156,44 @@ export default function CheckoutClient() {
 
   useEffect(() => {
     let active = true;
+    if (!user) {
+      setAddresses([]);
+      setSelectedAddressId('manual');
+      return;
+    }
+
+    fetchUserAddresses()
+      .then((nextAddresses) => {
+        if (!active) return;
+        setAddresses(nextAddresses);
+        const preferred = nextAddresses.find((address) => address.defaultAddress) || nextAddresses[0];
+        if (preferred) {
+          setSelectedAddressId(String(preferred.id));
+          applyAddress(preferred);
+        }
+      })
+      .catch(() => {
+        if (active) setAddresses([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    let active = true;
     if (formData.province) {
-      const p = provinces.find((p) => p.name === formData.province);
-      if (p) {
+      const province = provinces.find((current) => current.name === formData.province);
+      if (province) {
         setIsLoadingAddress(true);
-        fetch(`https://provinces.open-api.vn/api/v2/p/${p.code}?depth=2`)
+        fetch(`https://provinces.open-api.vn/api/v2/p/${province.code}?depth=2`)
           .then((res) => res.json())
           .then((data) => {
-            if (active) {
-              setWards(data.wards || []);
-            }
+            if (active) setWards(data.wards || []);
+          })
+          .catch(() => {
+            if (active) setWards([]);
           })
           .finally(() => {
             if (active) setIsLoadingAddress(false);
@@ -134,19 +209,97 @@ export default function CheckoutClient() {
 
   useEffect(() => {
     if (user) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         name: prev.name || user.name || '',
         email: prev.email || user.email || '',
         phone: prev.phone || user.phone || '',
         province: prev.province || user.province || '',
+        district: prev.district || user.district || '',
         ward: prev.ward || user.ward || '',
         detailAddress: prev.detailAddress || user.detailAddress || '',
       }));
     }
   }, [user]);
 
+  useEffect(() => {
+    let active = true;
+    const numericItems = cartItems
+      .map((item) => ({
+        productId: Number(item.id),
+        quantity: item.quantity,
+      }))
+      .filter((item) => Number.isFinite(item.productId));
 
+    if (numericItems.length === 0 || numericItems.length !== cartItems.length || !shippingMethodCode) {
+      setQuote(null);
+      setQuoteError('');
+      return;
+    }
+
+    quoteCheckout({
+      items: numericItems,
+      shippingMethodCode,
+      couponCode: appliedCoupon || undefined,
+    })
+      .then((nextQuote) => {
+        if (!active) return;
+        setQuote(nextQuote);
+        setQuoteError('');
+        setShippingMethods(nextQuote.shippingMethods);
+      })
+      .catch((quoteFailure) => {
+        if (!active) return;
+        setQuote(null);
+        setQuoteError(getApiErrorMessage(quoteFailure));
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [appliedCoupon, cartItems, shippingMethodCode]);
+
+  const applyAddress = (address: UserAddress) => {
+    setFormData((current) => ({
+      ...current,
+      name: address.recipientName,
+      phone: address.phone,
+      province: address.province,
+      district: address.district || '',
+      ward: address.ward,
+      detailAddress: address.detailAddress,
+    }));
+  };
+
+  const handleSelectAddress = (value: string) => {
+    setSelectedAddressId(value);
+    if (value === 'manual') return;
+    const selected = addresses.find((address) => String(address.id) === value);
+    if (selected) applyAddress(selected);
+  };
+
+  const handleSetDefaultAddress = async (address: UserAddress) => {
+    try {
+      const updated = await setDefaultUserAddress(address.id);
+      setAddresses((current) =>
+        current.map((item) => ({ ...item, defaultAddress: item.id === updated.id }))
+      );
+    } catch (addressError) {
+      setError(getApiErrorMessage(addressError));
+    }
+  };
+
+  const handleDeleteAddress = async (address: UserAddress) => {
+    try {
+      await deleteUserAddress(address.id);
+      setAddresses((current) => current.filter((item) => item.id !== address.id));
+      if (selectedAddressId === String(address.id)) {
+        setSelectedAddressId('manual');
+      }
+    } catch (addressError) {
+      setError(getApiErrorMessage(addressError));
+    }
+  };
 
   const handleUpdateQuantity = (id: string | number, quantity: number) => {
     if (quantity === 0) {
@@ -156,26 +309,30 @@ export default function CheckoutClient() {
     }
   };
 
-  const createLocalOrder = (customer: Order['customer']): Order => ({
-    id: Math.floor(Math.random() * 1000000).toString(),
-    date: new Date().toISOString(),
-    items: [...cartItems],
-    total,
-    status: paymentMethod === 'cod' ? 'processing' : 'pending_payment',
-    customer,
-    paymentMethod,
-  });
+  const applyCoupon = () => {
+    setAppliedCoupon(couponInput.trim().toUpperCase());
+  };
 
-  const handleCheckout = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const clearCoupon = () => {
+    setAppliedCoupon('');
+    setCouponInput('');
+  };
+
+  const handleCheckout = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (cartItems.length === 0 || isSubmitting) return;
 
     setError('');
 
+    if (!shippingMethodCode) {
+      setError(locale === 'vi' ? 'Vui long chon phuong thuc giao hang.' : 'Please choose a shipping method.');
+      return;
+    }
+
     if (paymentMethod !== 'cod' && !user) {
       setError(
         locale === 'vi'
-          ? 'Vui lòng đăng nhập để thanh toán trực tuyến.'
+          ? 'Vui long dang nhap de thanh toan truc tuyen.'
           : 'Please sign in to use online payment.'
       );
       setIsAuthModalOpen(true);
@@ -185,8 +342,8 @@ export default function CheckoutClient() {
     if (hasStockIssue) {
       setError(
         locale === 'vi'
-          ? `Một số sản phẩm đã vượt quá tồn kho: ${stockIssueNames}. Vui lòng giảm số lượng trước khi đặt hàng.`
-          : `Some products exceed available stock: ${stockIssueNames}. Please reduce quantities before checkout.`
+          ? `Co san pham vuot qua ton kho: ${stockIssueNames}.`
+          : `Some products exceed available stock: ${stockIssueNames}.`
       );
       return;
     }
@@ -194,6 +351,7 @@ export default function CheckoutClient() {
     const fullAddress = [
       formData.detailAddress.trim(),
       formData.ward.trim(),
+      formData.district.trim(),
       formData.province.trim(),
     ]
       .filter(Boolean)
@@ -207,19 +365,19 @@ export default function CheckoutClient() {
       note: formData.note.trim() || undefined,
     };
 
+    if (!customer.name || !customer.address || !customer.phone) {
+      setError(locale === 'vi' ? 'Vui long nhap du thong tin giao hang.' : 'Please complete shipping information.');
+      return;
+    }
+
     if (!isValidPhone(customer.phone)) {
-      setError(
-        locale === 'vi'
-          ? 'Số điện thoại chưa hợp lệ.'
-          : 'Please enter a valid phone number.'
-      );
+      setError(locale === 'vi' ? 'So dien thoai chua hop le.' : 'Please enter a valid phone number.');
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      let nextOrder: Order | null = null;
       const numericItems = cartItems
         .map((item) => ({
           productId: Number(item.id),
@@ -227,23 +385,36 @@ export default function CheckoutClient() {
         }))
         .filter((item) => Number.isFinite(item.productId));
 
-      if (user && numericItems.length === cartItems.length) {
-        try {
-          nextOrder = await createOrder({
-            items: numericItems,
-            customer,
-            paymentMethod,
-          });
-        } catch (apiError) {
-          if (!isNetworkError(apiError)) {
-            throw apiError;
-          }
-        }
+      if (numericItems.length !== cartItems.length) {
+        throw new Error('Cart contains items that cannot be checked out.');
       }
 
-      if (!nextOrder) {
-        nextOrder = createLocalOrder(customer);
+      let addressId =
+        user && selectedAddressId !== 'manual' ? Number(selectedAddressId) : undefined;
+
+      if (user && saveAddress && !addressId) {
+        const savedAddress = await createUserAddress({
+          recipientName: customer.name,
+          phone: customer.phone,
+          province: formData.province.trim(),
+          district: formData.district.trim(),
+          ward: formData.ward.trim(),
+          detailAddress: formData.detailAddress.trim(),
+          defaultAddress: addresses.length === 0,
+        });
+        setAddresses((current) => [savedAddress, ...current]);
+        setSelectedAddressId(String(savedAddress.id));
+        addressId = savedAddress.id;
       }
+
+      const nextOrder = await createOrder({
+        items: numericItems,
+        customer,
+        paymentMethod,
+        shippingMethodCode,
+        couponCode: appliedCoupon || undefined,
+        addressId,
+      });
 
       if (paymentMethod === 'vnpay' || paymentMethod === 'momo') {
         const payment = await createPayment(nextOrder.id, paymentMethod);
@@ -262,13 +433,18 @@ export default function CheckoutClient() {
         apiMessage && !apiMessage.includes('status code')
           ? apiMessage
           : locale === 'vi'
-            ? 'Không thể đặt hàng. Vui lòng kiểm tra tồn kho hoặc thử lại sau.'
-            : 'Could not place the order. Please check stock or try again later.'
+            ? 'Khong the dat hang. Vui long kiem tra lai.'
+            : 'Could not place the order. Please check details and try again.'
       );
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  const displayedSubtotal = quote?.subtotal ?? subtotal;
+  const displayedShipping = quote?.shippingFee ?? 0;
+  const displayedDiscount = quote?.discountAmount ?? 0;
+  const displayedTotal = quote?.total ?? subtotal;
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
@@ -289,23 +465,25 @@ export default function CheckoutClient() {
           </Link>
         </div>
 
-        <h1 data-testid="checkout-title" className="text-3xl font-bold text-gray-900 mb-8">{t('title')}</h1>
+        <h1 data-testid="checkout-title" className="text-3xl font-bold text-gray-900 mb-8">
+          {t('title')}
+        </h1>
 
         {!user && (
           <div className="mb-6 bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
               {locale === 'vi'
-                ? 'Bạn có thể đặt hàng nhanh. Đăng nhập để đồng bộ đơn hàng với tài khoản.'
-                : 'You can checkout as a guest. Sign in to sync orders with your account.'}
+                ? 'Ban co the dat COD nhanh. Dang nhap de dung thanh toan truc tuyen va luu dia chi.'
+                : 'You can place a COD guest order. Sign in for online payment and saved addresses.'}
             </p>
           </div>
         )}
 
-        {error && (
+        {(error || quoteError) && (
           <div className="mb-6 bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <p className="text-sm">{error}</p>
+            <p className="text-sm">{error || quoteError}</p>
           </div>
         )}
 
@@ -314,8 +492,8 @@ export default function CheckoutClient() {
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
               {locale === 'vi'
-                ? `Có sản phẩm vượt quá tồn kho: ${stockIssueNames}. Hãy giảm số lượng trong giỏ hàng.`
-                : `Some cart items exceed available stock: ${stockIssueNames}. Reduce quantities before checkout.`}
+                ? `Co san pham vuot qua ton kho: ${stockIssueNames}.`
+                : `Some cart items exceed available stock: ${stockIssueNames}.`}
             </p>
           </div>
         )}
@@ -324,7 +502,49 @@ export default function CheckoutClient() {
           <div className="w-full lg:w-2/3">
             <form id="checkout-form" onSubmit={handleCheckout} className="space-y-8">
               <div data-testid="checkout-shipping-section" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('shipping')}</h2>
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <MapPin className="w-5 h-5 text-amber-900" />
+                  {t('shipping')}
+                </h2>
+
+                {user && addresses.length > 0 && (
+                  <div className="mb-5 rounded-xl border border-gray-200 p-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {locale === 'vi' ? 'Dia chi da luu' : 'Saved address'}
+                    </label>
+                    <Select value={selectedAddressId} onValueChange={handleSelectAddress}>
+                      <SelectTrigger className="w-full bg-white">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="manual">
+                          {locale === 'vi' ? 'Nhap dia chi moi' : 'Enter a new address'}
+                        </SelectItem>
+                        {addresses.map((address) => (
+                          <SelectItem key={address.id} value={String(address.id)}>
+                            {address.recipientName} - {addressToLine(address)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {addresses.map((address) => (
+                        <div key={address.id} className="flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-600">
+                          <span>{address.recipientName}</span>
+                          {!address.defaultAddress && (
+                            <button type="button" className="text-amber-900" onClick={() => handleSetDefaultAddress(address)}>
+                              Default
+                            </button>
+                          )}
+                          <button type="button" className="text-red-600" onClick={() => handleDeleteAddress(address)}>
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -359,7 +579,7 @@ export default function CheckoutClient() {
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
                         {t('province')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
@@ -367,17 +587,31 @@ export default function CheckoutClient() {
                       <Select
                         required
                         value={formData.province}
-                        onValueChange={(val) => setFormData({ ...formData, province: val, ward: '' })}
+                        onValueChange={(value) => setFormData({ ...formData, province: value, ward: '' })}
                       >
-                        <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white h-[42px]">
+                        <SelectTrigger className="w-full bg-white h-[42px]">
                           <SelectValue placeholder={t('selectProvince')} />
                         </SelectTrigger>
                         <SelectContent>
-                          {provinces.map((p) => (
-                            <SelectItem key={p.code} value={p.name}>{p.name}</SelectItem>
+                          {provinces.map((province) => (
+                            <SelectItem key={province.code} value={province.name}>
+                              {province.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {locale === 'vi' ? 'Quan/Huyen' : 'District'}
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.district}
+                        onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
+                      />
                     </div>
 
                     <div>
@@ -388,14 +622,16 @@ export default function CheckoutClient() {
                         required
                         disabled={!formData.province}
                         value={formData.ward}
-                        onValueChange={(val) => setFormData({ ...formData, ward: val })}
+                        onValueChange={(value) => setFormData({ ...formData, ward: value })}
                       >
-                        <SelectTrigger className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900 bg-white disabled:bg-gray-100 h-[42px]">
+                        <SelectTrigger className="w-full bg-white disabled:bg-gray-100 h-[42px]">
                           <SelectValue placeholder={t('selectWard')} />
                         </SelectTrigger>
                         <SelectContent>
-                          {wards.map((w) => (
-                            <SelectItem key={w.code} value={w.name}>{w.name}</SelectItem>
+                          {wards.map((ward) => (
+                            <SelectItem key={ward.code} value={ward.name}>
+                              {ward.name}
+                            </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
@@ -413,6 +649,18 @@ export default function CheckoutClient() {
                     />
                   </div>
 
+                  {user && selectedAddressId === 'manual' && (
+                    <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+                      <input
+                        type="checkbox"
+                        checked={saveAddress}
+                        onChange={(event) => setSaveAddress(event.target.checked)}
+                        className="h-4 w-4 text-amber-900 focus:ring-amber-900"
+                      />
+                      {locale === 'vi' ? 'Luu dia chi nay' : 'Save this address'}
+                    </label>
+                  )}
+
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{t('note')}</label>
                     <textarea
@@ -425,6 +673,51 @@ export default function CheckoutClient() {
                 </div>
               </div>
 
+              <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-amber-900" />
+                  {locale === 'vi' ? 'Phuong thuc giao hang' : 'Shipping method'}
+                </h2>
+                <div className="grid gap-3">
+                  {shippingMethods.length === 0 ? (
+                    <p className="text-sm text-gray-500">
+                      {locale === 'vi' ? 'Chua co phuong thuc giao hang.' : 'No shipping methods available.'}
+                    </p>
+                  ) : (
+                    shippingMethods.map((method) => (
+                      <label
+                        key={method.code}
+                        className={`flex items-center justify-between gap-4 rounded-xl border p-4 transition ${
+                          shippingMethodCode === method.code ? 'border-amber-900 bg-amber-50' : 'border-gray-200'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3">
+                          <input
+                            type="radio"
+                            name="shippingMethod"
+                            value={method.code}
+                            checked={shippingMethodCode === method.code}
+                            onChange={() => setShippingMethodCode(method.code)}
+                            className="h-4 w-4 text-amber-900 focus:ring-amber-900"
+                          />
+                          <span>
+                            <span className="block font-medium text-gray-900">{method.name}</span>
+                            {method.freeThreshold ? (
+                              <span className="block text-xs text-gray-500">
+                                Free from {currency.format(method.freeThreshold)}₫
+                              </span>
+                            ) : null}
+                          </span>
+                        </span>
+                        <span className="font-semibold text-gray-900">
+                          {currency.format(method.fee)}₫
+                        </span>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+
               <div data-testid="checkout-payment-section" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('payment')}</h2>
                 <div className="space-y-4">
@@ -434,38 +727,33 @@ export default function CheckoutClient() {
                     ['momo', t('momo')],
                   ].map(([value, label]) => {
                     const isOnlineGateway = value === 'vnpay' || value === 'momo';
-                    const isDisabled =
-                      isOnlineGateway && (!gatewayEnabled[value] || !user);
+                    const isDisabled = isOnlineGateway && (!gatewayEnabled[value] || !user);
 
                     return (
-                    <label
-                      key={value}
-                      className={`flex items-center p-4 border rounded-xl transition-colors ${
-                        isDisabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'
-                      } ${
-                        paymentMethod === value
-                          ? 'border-amber-900 bg-amber-50'
-                          : 'border-gray-200'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="payment"
-                        value={value}
-                        checked={paymentMethod === value}
-                        disabled={isDisabled}
-                        onChange={() => setPaymentMethod(value)}
-                        className="h-4 w-4 text-amber-900 focus:ring-amber-900"
-                      />
-                      <span className="ml-3 font-medium text-gray-900">
-                        {label}
-                        {isOnlineGateway && !gatewayEnabled[value] && (
-                          <span className="ml-2 text-xs text-gray-500">
-                            {locale === 'vi' ? '(chưa cấu hình)' : '(not configured)'}
-                          </span>
-                        )}
-                      </span>
-                    </label>
+                      <label
+                        key={value}
+                        className={`flex items-center p-4 border rounded-xl transition-colors ${
+                          isDisabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'
+                        } ${paymentMethod === value ? 'border-amber-900 bg-amber-50' : 'border-gray-200'}`}
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          value={value}
+                          checked={paymentMethod === value}
+                          disabled={isDisabled}
+                          onChange={() => setPaymentMethod(value)}
+                          className="h-4 w-4 text-amber-900 focus:ring-amber-900"
+                        />
+                        <span className="ml-3 font-medium text-gray-900">
+                          {label}
+                          {isOnlineGateway && !gatewayEnabled[value] && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              {locale === 'vi' ? '(chua cau hinh)' : '(not configured)'}
+                            </span>
+                          )}
+                        </span>
+                      </label>
                     );
                   })}
                 </div>
@@ -476,7 +764,7 @@ export default function CheckoutClient() {
           <div className="w-full lg:w-1/3">
             <div data-testid="checkout-order-summary" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                {locale === 'vi' ? 'Tóm tắt đơn hàng' : 'Order Summary'}
+                {locale === 'vi' ? 'Tom tat don hang' : 'Order Summary'}
               </h2>
               <div className="space-y-4 mb-6 max-h-64 overflow-y-auto pr-2">
                 {cartItems.map((item) => (
@@ -488,7 +776,7 @@ export default function CheckoutClient() {
                       </p>
                     </div>
                     <span className="font-medium text-gray-900">
-                      {new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(
+                      {currency.format(
                         (typeof item.price === 'string' ? parseFloat(item.price) : item.price) *
                           item.quantity
                       )}
@@ -497,24 +785,64 @@ export default function CheckoutClient() {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-gray-200 pt-4 mb-6">
-                <div className="flex justify-between items-center text-lg font-bold text-gray-900">
-                  <span>{locale === 'vi' ? 'Tổng cộng' : 'Total'}</span>
-                  <span className="text-amber-900">
-                    {new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(total)}₫
-                  </span>
+
+              <div className="mb-5 rounded-xl border border-gray-200 p-3">
+                <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <Ticket className="w-4 h-4 text-amber-900" />
+                  {locale === 'vi' ? 'Ma giam gia' : 'Coupon'}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    value={couponInput}
+                    onChange={(event) => setCouponInput(event.target.value)}
+                    placeholder="SAVE10"
+                    className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-900 focus:ring-amber-900"
+                  />
+                  {appliedCoupon ? (
+                    <button type="button" onClick={clearCoupon} className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700">
+                      Clear
+                    </button>
+                  ) : (
+                    <button type="button" onClick={applyCoupon} className="rounded-lg bg-amber-900 px-3 py-2 text-sm font-medium text-white">
+                      Apply
+                    </button>
+                  )}
+                </div>
+                {appliedCoupon && (
+                  <p className="mt-2 text-xs font-medium text-emerald-700">{appliedCoupon}</p>
+                )}
+              </div>
+
+              <div className="border-t border-gray-200 pt-4 mb-6 space-y-3 text-sm">
+                <div className="flex justify-between text-gray-700">
+                  <span>{locale === 'vi' ? 'Tam tinh' : 'Subtotal'}</span>
+                  <span>{currency.format(displayedSubtotal)}₫</span>
+                </div>
+                <div className="flex justify-between text-gray-700">
+                  <span>{locale === 'vi' ? 'Phi giao hang' : 'Shipping'}</span>
+                  <span>{currency.format(displayedShipping)}₫</span>
+                </div>
+                {displayedDiscount > 0 && (
+                  <div className="flex justify-between text-emerald-700">
+                    <span>{locale === 'vi' ? 'Giam gia' : 'Discount'}</span>
+                    <span>-{currency.format(displayedDiscount)}₫</span>
+                  </div>
+                )}
+                <div className="flex justify-between items-center text-lg font-bold text-gray-900 pt-3 border-t border-gray-100">
+                  <span>{locale === 'vi' ? 'Tong cong' : 'Total'}</span>
+                  <span className="text-amber-900">{currency.format(displayedTotal)}₫</span>
                 </div>
               </div>
               <button
                 data-testid="checkout-submit"
                 type="submit"
                 form="checkout-form"
-                disabled={cartItems.length === 0 || isSubmitting || hasStockIssue}
+                disabled={cartItems.length === 0 || isSubmitting || hasStockIssue || !shippingMethodCode || Boolean(quoteError)}
                 className="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
                   ? locale === 'vi'
-                    ? 'Đang đặt hàng...'
+                    ? 'Dang dat hang...'
                     : 'Placing order...'
                   : t('placeOrder')}
               </button>

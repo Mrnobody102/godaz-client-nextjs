@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Package,
+  Settings,
   ShoppingCart,
   User,
   X,
@@ -150,14 +151,24 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                         {locale === 'vi' ? 'Đơn hàng của tôi' : 'My Orders'}
                       </Link>
                       {user.role === 'ADMIN' && (
-                        <Link
-                          href="/admin/products"
-                          onClick={() => setUserMenuOpen(false)}
-                          className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                        >
-                          <FolderTree className="w-4 h-4" />
-                          Catalog Operations
-                        </Link>
+                        <>
+                          <Link
+                            href="/admin/products"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <FolderTree className="w-4 h-4" />
+                            Catalog Operations
+                          </Link>
+                          <Link
+                            href="/admin/operations"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <Settings className="w-4 h-4" />
+                            Checkout Operations
+                          </Link>
+                        </>
                       )}
                       <button
                         type="button"

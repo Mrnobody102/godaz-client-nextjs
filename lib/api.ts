@@ -153,6 +153,91 @@ export interface AdminCategoryPayload {
   active: boolean;
 }
 
+export interface ShippingMethod {
+  id?: number | null;
+  code: string;
+  name: string;
+  description?: string | null;
+  fee: number;
+  freeThreshold?: number | null;
+  active: boolean;
+  sortOrder?: number | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+interface ApiShippingMethod extends Omit<ShippingMethod, 'fee' | 'freeThreshold'> {
+  fee: number | string;
+  freeThreshold?: number | string | null;
+}
+
+export interface ShippingMethodPayload {
+  code: string;
+  name: string;
+  description?: string;
+  fee: number;
+  freeThreshold?: number | null;
+  active: boolean;
+  sortOrder?: number;
+}
+
+export interface Coupon {
+  id: number;
+  code: string;
+  type: 'fixed' | 'percent' | string;
+  value: number;
+  minSubtotal?: number | null;
+  maxDiscount?: number | null;
+  usageLimit?: number | null;
+  usedCount: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  active: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+interface ApiCoupon extends Omit<Coupon, 'value' | 'minSubtotal' | 'maxDiscount'> {
+  value: number | string;
+  minSubtotal?: number | string | null;
+  maxDiscount?: number | string | null;
+}
+
+export interface CouponPayload {
+  code: string;
+  type: 'fixed' | 'percent';
+  value: number;
+  minSubtotal?: number | null;
+  maxDiscount?: number | null;
+  usageLimit?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  active: boolean;
+}
+
+export interface UserAddress {
+  id: number;
+  recipientName: string;
+  phone: string;
+  province: string;
+  district?: string | null;
+  ward: string;
+  detailAddress: string;
+  defaultAddress: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface UserAddressPayload {
+  recipientName: string;
+  phone: string;
+  province: string;
+  district?: string;
+  ward: string;
+  detailAddress: string;
+  defaultAddress?: boolean;
+}
+
 export interface CheckoutPayload {
   items: Array<{
     productId: number;
@@ -166,6 +251,25 @@ export interface CheckoutPayload {
     note?: string;
   };
   paymentMethod: string;
+  shippingMethodCode: string;
+  couponCode?: string;
+  addressId?: number;
+}
+
+export interface CheckoutQuotePayload {
+  items: CheckoutPayload['items'];
+  shippingMethodCode: string;
+  couponCode?: string;
+}
+
+export interface CheckoutQuote {
+  subtotal: number;
+  shippingFee: number;
+  discountAmount: number;
+  total: number;
+  couponCode?: string | null;
+  shippingMethod: ShippingMethod;
+  shippingMethods: ShippingMethod[];
 }
 
 export interface PaymentGatewayAvailability {
@@ -218,12 +322,22 @@ interface ApiOrderResponse {
   id: string;
   date: string;
   items: ApiOrderItem[];
+  subtotal?: number | string;
+  shippingFee?: number | string;
+  discountAmount?: number | string;
   total: number | string;
   status: string;
   customer: Order['customer'];
+  shippingMethod?: {
+    code: string;
+    name: string;
+    fee: number | string;
+  } | null;
+  couponCode?: string | null;
   paymentMethod: string;
   paymentStatus?: string | null;
   reservationExpiresAt?: string | null;
+  guestAccessToken?: string | null;
   events?: Array<{
     actorType: string;
     actorId?: string | null;
@@ -271,6 +385,32 @@ export function toAdminProduct(product: ApiAdminProduct): AdminProduct {
 
 export function toAdminCategory(category: ApiAdminCategory): AdminCategory {
   return category;
+}
+
+export function toShippingMethod(method: ApiShippingMethod): ShippingMethod {
+  return {
+    ...method,
+    fee: Number(method.fee),
+    freeThreshold:
+      method.freeThreshold === null || typeof method.freeThreshold === 'undefined'
+        ? null
+        : Number(method.freeThreshold),
+  };
+}
+
+export function toCoupon(coupon: ApiCoupon): Coupon {
+  return {
+    ...coupon,
+    value: Number(coupon.value),
+    minSubtotal:
+      coupon.minSubtotal === null || typeof coupon.minSubtotal === 'undefined'
+        ? null
+        : Number(coupon.minSubtotal),
+    maxDiscount:
+      coupon.maxDiscount === null || typeof coupon.maxDiscount === 'undefined'
+        ? null
+        : Number(coupon.maxDiscount),
+  };
 }
 
 export async function loginRequest(username: string, password: string) {
@@ -424,6 +564,102 @@ export async function deleteAdminCategory(id: string | number) {
   return toAdminCategory(data);
 }
 
+export async function fetchShippingMethods() {
+  const { data } = await api.get<ApiShippingMethod[]>('/api/checkout/shipping-methods');
+  return data.map(toShippingMethod);
+}
+
+export async function quoteCheckout(payload: CheckoutQuotePayload) {
+  const { data } = await api.post<{
+    subtotal: number | string;
+    shippingFee: number | string;
+    discountAmount: number | string;
+    total: number | string;
+    couponCode?: string | null;
+    shippingMethod: ApiShippingMethod;
+    shippingMethods: ApiShippingMethod[];
+  }>('/api/checkout/quote', payload);
+  return {
+    subtotal: Number(data.subtotal),
+    shippingFee: Number(data.shippingFee),
+    discountAmount: Number(data.discountAmount),
+    total: Number(data.total),
+    couponCode: data.couponCode ?? null,
+    shippingMethod: toShippingMethod(data.shippingMethod),
+    shippingMethods: data.shippingMethods.map(toShippingMethod),
+  };
+}
+
+export async function fetchUserAddresses() {
+  const { data } = await api.get<UserAddress[]>('/api/users/addresses');
+  return data;
+}
+
+export async function createUserAddress(payload: UserAddressPayload) {
+  const { data } = await api.post<UserAddress>('/api/users/addresses', payload);
+  return data;
+}
+
+export async function updateUserAddress(id: string | number, payload: UserAddressPayload) {
+  const { data } = await api.put<UserAddress>(`/api/users/addresses/${id}`, payload);
+  return data;
+}
+
+export async function setDefaultUserAddress(id: string | number) {
+  const { data } = await api.post<UserAddress>(`/api/users/addresses/${id}/default`);
+  return data;
+}
+
+export async function deleteUserAddress(id: string | number) {
+  await api.delete(`/api/users/addresses/${id}`);
+}
+
+export async function fetchAdminShippingMethods() {
+  const { data } = await api.get<ApiShippingMethod[]>('/api/admin/shipping-methods');
+  return data.map(toShippingMethod);
+}
+
+export async function createAdminShippingMethod(payload: ShippingMethodPayload) {
+  const { data } = await api.post<ApiShippingMethod>(
+    '/api/admin/shipping-methods',
+    payload
+  );
+  return toShippingMethod(data);
+}
+
+export async function updateAdminShippingMethod(id: string | number, payload: ShippingMethodPayload) {
+  const { data } = await api.put<ApiShippingMethod>(
+    `/api/admin/shipping-methods/${id}`,
+    payload
+  );
+  return toShippingMethod(data);
+}
+
+export async function deleteAdminShippingMethod(id: string | number) {
+  const { data } = await api.delete<ApiShippingMethod>(`/api/admin/shipping-methods/${id}`);
+  return toShippingMethod(data);
+}
+
+export async function fetchAdminCoupons() {
+  const { data } = await api.get<ApiCoupon[]>('/api/admin/coupons');
+  return data.map(toCoupon);
+}
+
+export async function createAdminCoupon(payload: CouponPayload) {
+  const { data } = await api.post<ApiCoupon>('/api/admin/coupons', payload);
+  return toCoupon(data);
+}
+
+export async function updateAdminCoupon(id: string | number, payload: CouponPayload) {
+  const { data } = await api.put<ApiCoupon>(`/api/admin/coupons/${id}`, payload);
+  return toCoupon(data);
+}
+
+export async function deleteAdminCoupon(id: string | number) {
+  const { data } = await api.delete<ApiCoupon>(`/api/admin/coupons/${id}`);
+  return toCoupon(data);
+}
+
 export async function fetchProductReviews(productId: string | number, page = 0, size = 5) {
   const { data } = await api.get<ProductReviewPageResponse>(
     `/api/products/${productId}/reviews`,
@@ -467,7 +703,11 @@ export async function createOrder(payload: CheckoutPayload) {
       'X-Idempotency-Key': getIdempotencyKey('order'),
     },
   });
-  return toOrder(data);
+  const order = toOrder(data);
+  if (order.guestAccessToken) {
+    saveGuestOrderToken(order.id, order.guestAccessToken);
+  }
+  return order;
 }
 
 export async function fetchPaymentGateways() {
@@ -492,7 +732,10 @@ export async function createPayment(orderId: string, gateway: 'vnpay' | 'momo') 
 }
 
 export async function fetchOrder(orderId: string) {
-  const { data } = await api.get<ApiOrderResponse>(`/api/orders/${orderId}`);
+  const guestToken = getGuestOrderToken(orderId);
+  const { data } = await api.get<ApiOrderResponse>(`/api/orders/${orderId}`, {
+    headers: guestToken ? { 'X-Guest-Order-Token': guestToken } : undefined,
+  });
   return toOrder(data);
 }
 
@@ -552,15 +795,30 @@ export async function transitionAdminOrder(
 }
 
 function toOrder(order: ApiOrderResponse): Order {
+  const subtotal = Number(order.subtotal ?? order.total);
+  const shippingFee = Number(order.shippingFee ?? 0);
+  const discountAmount = Number(order.discountAmount ?? 0);
   return {
     id: order.id,
     date: order.date,
+    subtotal,
+    shippingFee,
+    discountAmount,
     total: Number(order.total),
     status: normalizeOrderStatus(order.status || ''),
     customer: order.customer,
+    shippingMethod: order.shippingMethod
+      ? {
+          code: order.shippingMethod.code,
+          name: order.shippingMethod.name,
+          fee: Number(order.shippingMethod.fee),
+        }
+      : null,
+    couponCode: order.couponCode ?? null,
     paymentMethod: order.paymentMethod,
     paymentStatus: normalizePaymentStatus(order.paymentStatus),
     reservationExpiresAt: order.reservationExpiresAt ?? null,
+    guestAccessToken: order.guestAccessToken ?? null,
     events: (order.events || []).map(toOrderEvent),
     items: order.items.map((item) => ({
       id: item.productId,
@@ -573,6 +831,30 @@ function toOrder(order: ApiOrderResponse): Order {
       quantity: item.quantity,
     })),
   };
+}
+
+function saveGuestOrderToken(orderId: string, token: string) {
+  if (typeof window === 'undefined') return;
+  try {
+    const existing = window.localStorage.getItem('guestOrderTokens');
+    const tokens = existing ? JSON.parse(existing) as Record<string, string> : {};
+    tokens[orderId] = token;
+    window.localStorage.setItem('guestOrderTokens', JSON.stringify(tokens));
+  } catch {
+    window.localStorage.setItem('guestOrderTokens', JSON.stringify({ [orderId]: token }));
+  }
+}
+
+export function getGuestOrderToken(orderId: string) {
+  if (typeof window === 'undefined') return null;
+  const existing = window.localStorage.getItem('guestOrderTokens');
+  if (!existing) return null;
+  try {
+    const tokens = JSON.parse(existing) as Record<string, string>;
+    return tokens[orderId] || null;
+  } catch {
+    return null;
+  }
 }
 
 function toOrderEvent(event: NonNullable<ApiOrderResponse['events']>[number]): OrderEvent {

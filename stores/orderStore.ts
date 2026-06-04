@@ -81,6 +81,9 @@ export interface Order {
   id: string;
   date: string;
   items: OrderItem[];
+  subtotal: number;
+  shippingFee: number;
+  discountAmount: number;
   total: number;
   status: OrderStatus;
   customer: {
@@ -90,10 +93,17 @@ export interface Order {
     email?: string | null;
     note?: string | null;
   };
+  shippingMethod?: {
+    code: string;
+    name: string;
+    fee: number;
+  } | null;
+  couponCode?: string | null;
   paymentMethod: string;
   paymentStatus?: PaymentStatus | null;
   reservationExpiresAt?: string | null;
   events?: OrderEvent[];
+  guestAccessToken?: string | null;
 }
 
 interface OrderState {
