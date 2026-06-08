@@ -3,11 +3,14 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import {
   AuthUser,
+  CartLinePayload,
   googleLoginRequest,
   isNetworkError,
   loginRequest,
+  mergeServerCart,
   registerRequest,
 } from '@/lib/api';
+import useCartStore from '@/stores/cartStore';
 
 interface User {
   id: string;
@@ -68,6 +71,30 @@ function readLocalUsers(): StoredUser[] {
   }
 }
 
+function cartItemsToPayload(): CartLinePayload[] {
+  return useCartStore
+    .getState()
+    .items.map((item) => ({
+      productId: Number(item.id),
+      variantId:
+        typeof item.variantId === 'number' && Number.isFinite(item.variantId)
+          ? item.variantId
+          : undefined,
+      quantity: item.quantity,
+    }))
+    .filter((item) => Number.isFinite(item.productId));
+}
+
+async function syncCartWithServer() {
+  if (typeof window === 'undefined' || !localStorage.getItem('token')) return;
+  try {
+    const mergedItems = await mergeServerCart(cartItemsToPayload());
+    useCartStore.getState().replaceCart(mergedItems);
+  } catch {
+    // Cart sync is best-effort; auth should not fail because cart reconciliation failed.
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
+        void syncCartWithServer();
       } catch (error) {
         console.error('Error parsing stored user:', error);
       }
@@ -100,6 +128,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('user', JSON.stringify(nextUser));
     if (token) {
       localStorage.setItem('token', token);
+      void syncCartWithServer();
     }
   };
 

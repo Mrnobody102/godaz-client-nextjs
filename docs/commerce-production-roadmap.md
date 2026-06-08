@@ -170,7 +170,7 @@ Acceptance:
 | Address book | Done | Important |
 | Product variants/gallery/SKU/brand | Done in Mega Batch | Important tùy ngành hàng |
 | Customer order detail route | Done | Quick win |
-| Server cart + guest/auth merge | Missing | Later |
+| Server cart + guest/auth merge | Done | Later |
 | Admin dashboard/analytics | Missing | Later |
 
 ## Working Rules

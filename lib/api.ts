@@ -327,6 +327,32 @@ export interface CheckoutQuote {
   shippingMethods: ShippingMethod[];
 }
 
+export interface ApiCartItem {
+  productId: number;
+  variantId?: number | null;
+  name: string;
+  variantName?: string | null;
+  sku?: string | null;
+  category: string;
+  categorySlug?: string | null;
+  price: number | string;
+  unit: string;
+  image: string;
+  description: string;
+  stock: number;
+  quantity: number;
+}
+
+export interface ApiCartResponse {
+  items: ApiCartItem[];
+}
+
+export interface CartLinePayload {
+  productId: number;
+  variantId?: number | null;
+  quantity: number;
+}
+
 export interface PaymentGatewayAvailability {
   gateway: 'vnpay' | 'momo' | string;
   enabled: boolean;
@@ -665,6 +691,59 @@ export async function quoteCheckout(payload: CheckoutQuotePayload) {
 export async function fetchUserAddresses() {
   const { data } = await api.get<UserAddress[]>('/api/users/addresses');
   return data;
+}
+
+export function toCartProduct(item: ApiCartItem): Product & { quantity: number } {
+  return {
+    id: item.productId,
+    cartKey: item.variantId ? `${item.productId}:${item.variantId}` : String(item.productId),
+    variantId: item.variantId ?? null,
+    variantName: item.variantName ?? null,
+    sku: item.sku ?? null,
+    name: item.name,
+    category: item.category,
+    categorySlug: item.categorySlug ?? undefined,
+    price: Number(item.price),
+    unit: item.unit,
+    image: item.image,
+    description: item.description,
+    stock: item.stock,
+    quantity: item.quantity,
+  };
+}
+
+export async function fetchCart() {
+  const { data } = await api.get<ApiCartResponse>('/api/cart');
+  return data.items.map(toCartProduct);
+}
+
+export async function mergeServerCart(items: CartLinePayload[]) {
+  const { data } = await api.post<ApiCartResponse>('/api/cart/merge', { items });
+  return data.items.map(toCartProduct);
+}
+
+export async function replaceServerCart(items: CartLinePayload[]) {
+  const { data } = await api.put<ApiCartResponse>('/api/cart', { items });
+  return data.items.map(toCartProduct);
+}
+
+export async function updateServerCartLine(item: CartLinePayload) {
+  const { data } = await api.patch<ApiCartResponse>('/api/cart/items', item);
+  return data.items.map(toCartProduct);
+}
+
+export async function removeServerCartLine(productId: number, variantId?: number | null) {
+  const { data } = await api.delete<ApiCartResponse>('/api/cart/items', {
+    params: {
+      productId,
+      variantId: variantId ?? undefined,
+    },
+  });
+  return data.items.map(toCartProduct);
+}
+
+export async function clearServerCart() {
+  await api.delete('/api/cart');
 }
 
 export async function createUserAddress(payload: UserAddressPayload) {

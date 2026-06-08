@@ -4,6 +4,7 @@ import {
   getApiErrorMessage,
   toAdminCategory,
   toAdminProduct,
+  toCartProduct,
   toCoupon,
   toProduct,
   toShippingMethod,
@@ -122,6 +123,30 @@ describe('api transformers and errors', () => {
     expect(shipping.freeThreshold).toBe(1000000);
     expect(coupon.value).toBe(10);
     expect(coupon.maxDiscount).toBe(50000);
+  });
+
+  it('maps server cart item to local cart product', () => {
+    const mapped = toCartProduct({
+      productId: 7,
+      variantId: 9,
+      name: 'Cart Bowl',
+      variantName: 'Large',
+      sku: 'BOWL-L',
+      category: 'Gom Su',
+      categorySlug: 'gom-su',
+      price: '150000.00',
+      unit: 'item',
+      image: 'https://example.com/cart.jpg',
+      description: 'cart desc',
+      stock: 3,
+      quantity: 2,
+    });
+
+    expect(mapped.id).toBe(7);
+    expect(mapped.cartKey).toBe('7:9');
+    expect(mapped.variantId).toBe(9);
+    expect(mapped.price).toBe(150000);
+    expect(mapped.quantity).toBe(2);
   });
 
   it('returns fallback message for unknown errors', () => {
