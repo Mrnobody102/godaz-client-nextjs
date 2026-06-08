@@ -266,6 +266,15 @@ export default function CustomerOrderDetailClient() {
                     {new Date(order.reservationExpiresAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
                   </p>
                 )}
+                {order.refundedAt && (
+                  <p className="mt-3 text-sm text-gray-600">
+                    {locale === 'vi' ? 'Da hoan tien' : 'Refunded'}
+                    {order.refundAmount != null
+                      ? ` ${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(order.refundAmount)}₫`
+                      : ''}{' '}
+                    · {new Date(order.refundedAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
+                  </p>
+                )}
               </div>
             </aside>
           </div>

@@ -26,6 +26,20 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.dispatchEvent(new Event('unauthorized'));
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface AuthUser {
   id: string;
   name: string;
@@ -381,6 +395,8 @@ interface ApiOrderResponse {
   paymentMethod: string;
   paymentStatus?: string | null;
   reservationExpiresAt?: string | null;
+  refundAmount?: number | string | null;
+  refundedAt?: string | null;
   guestAccessToken?: string | null;
   events?: Array<{
     actorType: string;
@@ -874,6 +890,8 @@ function toOrder(order: ApiOrderResponse): Order {
     paymentMethod: order.paymentMethod,
     paymentStatus: normalizePaymentStatus(order.paymentStatus),
     reservationExpiresAt: order.reservationExpiresAt ?? null,
+    refundAmount: order.refundAmount == null ? null : Number(order.refundAmount),
+    refundedAt: order.refundedAt ?? null,
     guestAccessToken: order.guestAccessToken ?? null,
     events: (order.events || []).map(toOrderEvent),
     items: order.items.map((item) => ({

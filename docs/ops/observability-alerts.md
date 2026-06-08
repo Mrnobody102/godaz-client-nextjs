@@ -12,6 +12,7 @@
 - `commerce_payment_initiated_total`
 - `commerce_payment_captured_total`
 - `commerce_payment_failed_total`
+- `commerce_payment_refunded_total`
 - `commerce_reservation_expired_total`
 - `commerce_stock_released_total`
 
@@ -32,10 +33,13 @@
 - P2: Order creation latency degradation
 - P2: `commerce_reservation_expired_total` spike, indicating payment users are getting stuck.
 - P2: `commerce_payment_initiated_total` rises while `commerce_payment_captured_total` stays flat for 10 min.
+- P2: Orders stuck in `pending_payment` beyond the reservation TTL (15 min) — possible callback delivery gap.
+- P2: `commerce_payment_refunded_total` spike — unusual refund volume warrants review.
 
 ## Prometheus Seeds
 - Payment capture gap: `increase(commerce_payment_initiated_total[10m]) - increase(commerce_payment_captured_total[10m])`
 - Payment failure spike: `increase(commerce_payment_failed_total[10m])`
+- Refund spike: `increase(commerce_payment_refunded_total[10m])`
 - Reservation expiry spike: `increase(commerce_reservation_expired_total[10m])`
 - Stock release spike: `increase(commerce_stock_released_total[10m])`
 

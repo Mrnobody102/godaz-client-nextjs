@@ -102,6 +102,8 @@ export interface Order {
   paymentMethod: string;
   paymentStatus?: PaymentStatus | null;
   reservationExpiresAt?: string | null;
+  refundAmount?: number | null;
+  refundedAt?: string | null;
   events?: OrderEvent[];
   guestAccessToken?: string | null;
 }

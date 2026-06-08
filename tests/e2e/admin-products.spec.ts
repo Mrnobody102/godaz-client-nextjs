@@ -125,8 +125,8 @@ test.describe('Admin catalog operations', () => {
     await expect(page.getByText('Seed Bowl')).toBeVisible();
 
     await page.getByPlaceholder('Name').first().fill('Mock Vase');
-    await page.getByPlaceholder('Price').fill('250000');
-    await page.getByPlaceholder('Stock').fill('9');
+    await page.getByPlaceholder('Price', { exact: true }).fill('250000');
+    await page.getByPlaceholder('Stock', { exact: true }).fill('9');
     await page.getByRole('button', { name: 'Create product' }).click();
 
     await expect(page.getByText('Mock Vase')).toBeVisible();

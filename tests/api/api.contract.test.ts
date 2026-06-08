@@ -132,6 +132,7 @@ describe('api transformers and errors', () => {
     expect(normalizeOrderStatus('PENDING_PAYMENT')).toBe('pending_payment');
     expect(normalizeOrderStatus('confirmed')).toBe('processing');
     expect(normalizePaymentStatus('CAPTURED')).toBe('captured');
+    expect(normalizePaymentStatus('REFUNDED')).toBe('refunded');
     expect(normalizePaymentStatus('unknown')).toBeNull();
   });
 });

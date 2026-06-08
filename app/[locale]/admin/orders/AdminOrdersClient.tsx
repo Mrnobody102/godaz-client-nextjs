@@ -151,10 +151,27 @@ export default function AdminOrdersClient() {
 
   const transitionOrder = async (status: OrderStatus) => {
     if (!selectedOrder) return;
+
+    let reason = `admin_${status}`;
+    // Refund and cancel are destructive (restock + money settlement), so confirm and capture a reason.
+    if (status === 'refunded' || status === 'cancelled') {
+      const promptLabel =
+        status === 'refunded'
+          ? locale === 'vi'
+            ? 'Lý do hoàn tiền (đơn sẽ được hoàn kho):'
+            : 'Refund reason (inventory will be restocked):'
+          : locale === 'vi'
+            ? 'Lý do hủy đơn:'
+            : 'Cancellation reason:';
+      const input = window.prompt(promptLabel, '');
+      if (input === null) return;
+      reason = input.trim() || `admin_${status}`;
+    }
+
     setIsMutating(true);
     setError('');
     try {
-      const updated = await transitionAdminOrder(selectedOrder.id, status, `admin_${status}`);
+      const updated = await transitionAdminOrder(selectedOrder.id, status, reason);
       setSelectedOrder(updated);
       setOrders((current) =>
         current.map((order) => (order.id === updated.id ? updated : order))
@@ -430,6 +447,26 @@ export default function AdminOrdersClient() {
                           <span className="ml-2">{statusLabel(status, locale)}</span>
                         </button>
                       ))}
+                    </div>
+                    <div className="border-t border-gray-100 pt-4 space-y-1 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <span className="text-gray-500">{locale === 'vi' ? 'Thanh toán' : 'Payment'}</span>
+                        <span className="font-medium text-gray-900">
+                          {selectedOrder.paymentMethod?.toUpperCase()}
+                          {selectedOrder.paymentStatus ? ` · ${selectedOrder.paymentStatus}` : ''}
+                        </span>
+                      </div>
+                      {selectedOrder.refundedAt && (
+                        <div className="flex justify-between gap-3">
+                          <span className="text-gray-500">{locale === 'vi' ? 'Đã hoàn tiền' : 'Refunded'}</span>
+                          <span className="font-medium text-gray-900">
+                            {selectedOrder.refundAmount != null
+                              ? `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(selectedOrder.refundAmount)}₫ · `
+                              : ''}
+                            {new Date(selectedOrder.refundedAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="border-t border-gray-100 pt-4">
                       <h3 className="font-semibold text-gray-900 mb-3">

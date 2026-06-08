@@ -82,6 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     }
     setIsLoading(false);
+
+    const handleUnauthorized = () => {
+      setUser(null);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+    };
+
+    window.addEventListener('unauthorized', handleUnauthorized);
+    return () => {
+      window.removeEventListener('unauthorized', handleUnauthorized);
+    };
   }, []);
 
   const persistSession = (nextUser: User, token?: string) => {

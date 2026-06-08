@@ -75,6 +75,13 @@ Mục tiêu batch này là làm chắc đường tiền: `cart -> order -> stock
 - [x] Prometheus alert rules cho payment failure/capture gap/reservation expiry/stock release spike.
 - [x] CI backend và frontend gate optional deploy/Sonar bằng config thật.
 
+### Batch A verification (spine hardening)
+
+- Toàn bộ 37 backend test chạy xanh trên JDK 21 (`./mvnw test`): transition guard, idempotency replay/conflict, duplicate callback, amount mismatch, invalid signature, refund restock, concurrent oversell.
+- Fix bug môi trường test: gỡ `MODE=PostgreSQL` khỏi URL H2 trong `application-test.yml`. H2Dialect render lock `for no key update` (cú pháp Postgres) khi ở mode này, khiến mọi test dùng `PESSIMISTIC_WRITE` fail. Đây là lý do backend test trước đây chưa từng pass.
+- Refund hiện là manual settlement + auto restock (không gọi API gateway). Tiền hoàn xử lý thủ công ngoài hệ thống; reason được ghi vào `order_events` và `payment.refund_reason`.
+- Rate limit phủ thêm `POST /api/payments` (5 req/phút/IP).
+
 ## Batch 1 Remaining Notes
 
 - [x] Fix `district` field drift: migration V7 có `district`, backend entity/API đã map field này.
