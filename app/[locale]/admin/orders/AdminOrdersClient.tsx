@@ -42,6 +42,11 @@ const NEXT_ACTIONS: Partial<Record<OrderStatus, OrderStatus[]>> = {
   delivered: ['refunded'],
 };
 
+function initialSearchParam(key: string) {
+  if (typeof window === 'undefined') return '';
+  return new URLSearchParams(window.location.search).get(key) || '';
+}
+
 function statusLabel(status: OrderStatus | 'all', locale: string) {
   const vi: Record<OrderStatus | 'all', string> = {
     all: 'Tất cả',
@@ -96,10 +101,15 @@ export default function AdminOrdersClient() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [orders, setOrders] = useState<Order[]>([]);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
-  const [paymentFilter, setPaymentFilter] = useState('');
-  const [createdFrom, setCreatedFrom] = useState('');
-  const [createdTo, setCreatedTo] = useState('');
+  const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>(() => {
+    const status = initialSearchParam('status');
+    return STATUS_OPTIONS.includes(status as OrderStatus | 'all')
+      ? (status as OrderStatus | 'all')
+      : 'all';
+  });
+  const [paymentFilter, setPaymentFilter] = useState(() => initialSearchParam('paymentMethod'));
+  const [createdFrom, setCreatedFrom] = useState(() => initialSearchParam('createdFrom'));
+  const [createdTo, setCreatedTo] = useState(() => initialSearchParam('createdTo'));
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isLoading, setIsLoading] = useState(false);

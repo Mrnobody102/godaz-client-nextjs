@@ -1,6 +1,8 @@
 'use client';
 
 import {
+  BarChart3,
+  ClipboardList,
   FolderTree,
   Globe,
   Heart,
@@ -152,6 +154,22 @@ export function Header({ cartCount, onCartClick, onAuthClick }: HeaderProps) {
                       </Link>
                       {user.role === 'ADMIN' && (
                         <>
+                          <Link
+                            href="/admin"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <BarChart3 className="w-4 h-4" />
+                            Admin Dashboard
+                          </Link>
+                          <Link
+                            href="/admin/orders"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                          >
+                            <ClipboardList className="w-4 h-4" />
+                            Order Operations
+                          </Link>
                           <Link
                             href="/admin/products"
                             onClick={() => setUserMenuOpen(false)}

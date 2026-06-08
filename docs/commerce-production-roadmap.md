@@ -171,7 +171,7 @@ Acceptance:
 | Product variants/gallery/SKU/brand | Done in Mega Batch | Important tùy ngành hàng |
 | Customer order detail route | Done | Quick win |
 | Server cart + guest/auth merge | Done | Later |
-| Admin dashboard/analytics | Missing | Later |
+| Admin dashboard/analytics | Done | Later |
 
 ## Working Rules
 

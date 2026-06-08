@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   getApiErrorMessage,
+  toAdminDashboard,
   toAdminCategory,
   toAdminProduct,
   toCartProduct,
@@ -147,6 +148,56 @@ describe('api transformers and errors', () => {
     expect(mapped.variantId).toBe(9);
     expect(mapped.price).toBe(150000);
     expect(mapped.quantity).toBe(2);
+  });
+
+  it('maps admin dashboard response with numeric fields and empty arrays', () => {
+    const mapped = toAdminDashboard({
+      from: '2026-01-01T00:00:00Z',
+      to: '2026-01-30T23:59:59Z',
+      kpis: {
+        grossRevenue: '300000.00',
+        netRevenue: 250000,
+        orderCount: 4,
+        averageOrderValue: '75000.00',
+        pendingPaymentCount: 1,
+        refundCount: 1,
+      },
+      orderStatusBreakdown: null,
+      paymentStatusBreakdown: undefined,
+      paymentMethodBreakdown: [{ key: 'vnpay', count: 2 }],
+      timeSeries: [
+        {
+          date: '2026-01-02',
+          orders: 2,
+          grossRevenue: '100000.00',
+          netRevenue: '90000.00',
+        },
+      ],
+      lowStockItems: null,
+      pendingPaymentOrders: [
+        {
+          id: 'order-1',
+          date: '2026-01-02T00:00:00Z',
+          customerName: 'Buyer',
+          total: '120000.00',
+          status: 'pending_payment',
+          paymentMethod: 'momo',
+          paymentStatus: undefined,
+        },
+      ],
+      recentOrders: null,
+    });
+
+    expect(mapped.kpis.grossRevenue).toBe(300000);
+    expect(mapped.kpis.netRevenue).toBe(250000);
+    expect(mapped.orderStatusBreakdown).toEqual([]);
+    expect(mapped.paymentStatusBreakdown).toEqual([]);
+    expect(mapped.paymentMethodBreakdown[0].count).toBe(2);
+    expect(mapped.timeSeries[0].netRevenue).toBe(90000);
+    expect(mapped.lowStockItems).toEqual([]);
+    expect(mapped.pendingPaymentOrders[0].total).toBe(120000);
+    expect(mapped.pendingPaymentOrders[0].paymentStatus).toBeNull();
+    expect(mapped.recentOrders).toEqual([]);
   });
 
   it('returns fallback message for unknown errors', () => {

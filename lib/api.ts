@@ -443,6 +443,101 @@ interface ApiOrderPageResponse {
   size: number;
 }
 
+interface ApiDashboardKpis {
+  grossRevenue?: number | string | null;
+  netRevenue?: number | string | null;
+  orderCount?: number | null;
+  averageOrderValue?: number | string | null;
+  pendingPaymentCount?: number | null;
+  refundCount?: number | null;
+}
+
+interface ApiDashboardBreakdown {
+  key: string;
+  count: number;
+}
+
+interface ApiDashboardDailyMetric {
+  date: string;
+  orders?: number | null;
+  grossRevenue?: number | string | null;
+  netRevenue?: number | string | null;
+}
+
+interface ApiDashboardLowStockItem {
+  type: 'product' | 'variant' | string;
+  productId: number;
+  variantId?: number | null;
+  name: string;
+  sku?: string | null;
+  category: string;
+  stock: number;
+}
+
+interface ApiDashboardOrderSummary {
+  id: string;
+  date: string;
+  customerName: string;
+  total: number | string;
+  status: string;
+  paymentMethod: string;
+  paymentStatus?: string | null;
+}
+
+interface ApiAdminDashboardResponse {
+  from: string;
+  to: string;
+  kpis?: ApiDashboardKpis | null;
+  orderStatusBreakdown?: ApiDashboardBreakdown[] | null;
+  paymentStatusBreakdown?: ApiDashboardBreakdown[] | null;
+  paymentMethodBreakdown?: ApiDashboardBreakdown[] | null;
+  timeSeries?: ApiDashboardDailyMetric[] | null;
+  lowStockItems?: ApiDashboardLowStockItem[] | null;
+  pendingPaymentOrders?: ApiDashboardOrderSummary[] | null;
+  recentOrders?: ApiDashboardOrderSummary[] | null;
+}
+
+export interface AdminDashboard {
+  from: string;
+  to: string;
+  kpis: {
+    grossRevenue: number;
+    netRevenue: number;
+    orderCount: number;
+    averageOrderValue: number;
+    pendingPaymentCount: number;
+    refundCount: number;
+  };
+  orderStatusBreakdown: ApiDashboardBreakdown[];
+  paymentStatusBreakdown: ApiDashboardBreakdown[];
+  paymentMethodBreakdown: ApiDashboardBreakdown[];
+  timeSeries: Array<{
+    date: string;
+    orders: number;
+    grossRevenue: number;
+    netRevenue: number;
+  }>;
+  lowStockItems: ApiDashboardLowStockItem[];
+  pendingPaymentOrders: Array<{
+    id: string;
+    date: string;
+    customerName: string;
+    total: number;
+    status: string;
+    paymentMethod: string;
+    paymentStatus: string | null;
+  }>;
+  recentOrders: Array<{
+    id: string;
+    date: string;
+    customerName: string;
+    total: number;
+    status: string;
+    paymentMethod: string;
+    paymentStatus: string | null;
+  }>;
+}
+
 export function isNetworkError(error: unknown) {
   return axios.isAxiosError(error) && !error.response;
 }
@@ -508,6 +603,42 @@ export function toCoupon(coupon: ApiCoupon): Coupon {
       coupon.maxDiscount === null || typeof coupon.maxDiscount === 'undefined'
         ? null
         : Number(coupon.maxDiscount),
+  };
+}
+
+export function toAdminDashboard(data: ApiAdminDashboardResponse): AdminDashboard {
+  const kpis = data.kpis || {};
+  return {
+    from: data.from,
+    to: data.to,
+    kpis: {
+      grossRevenue: Number(kpis.grossRevenue ?? 0),
+      netRevenue: Number(kpis.netRevenue ?? 0),
+      orderCount: kpis.orderCount ?? 0,
+      averageOrderValue: Number(kpis.averageOrderValue ?? 0),
+      pendingPaymentCount: kpis.pendingPaymentCount ?? 0,
+      refundCount: kpis.refundCount ?? 0,
+    },
+    orderStatusBreakdown: data.orderStatusBreakdown || [],
+    paymentStatusBreakdown: data.paymentStatusBreakdown || [],
+    paymentMethodBreakdown: data.paymentMethodBreakdown || [],
+    timeSeries: (data.timeSeries || []).map((item) => ({
+      date: item.date,
+      orders: item.orders ?? 0,
+      grossRevenue: Number(item.grossRevenue ?? 0),
+      netRevenue: Number(item.netRevenue ?? 0),
+    })),
+    lowStockItems: data.lowStockItems || [],
+    pendingPaymentOrders: (data.pendingPaymentOrders || []).map(toDashboardOrderSummary),
+    recentOrders: (data.recentOrders || []).map(toDashboardOrderSummary),
+  };
+}
+
+function toDashboardOrderSummary(order: ApiDashboardOrderSummary) {
+  return {
+    ...order,
+    total: Number(order.total),
+    paymentStatus: order.paymentStatus ?? null,
   };
 }
 
@@ -928,6 +1059,16 @@ export async function fetchAdminOrders(params?: {
     page: data.page,
     size: data.size,
   };
+}
+
+export async function fetchAdminDashboard(params?: { from?: string; to?: string }) {
+  const { data } = await api.get<ApiAdminDashboardResponse>('/api/admin/dashboard', {
+    params: {
+      from: params?.from || undefined,
+      to: params?.to || undefined,
+    },
+  });
+  return toAdminDashboard(data);
 }
 
 export async function transitionAdminOrder(
