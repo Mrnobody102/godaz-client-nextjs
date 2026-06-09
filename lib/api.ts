@@ -542,6 +542,10 @@ export function isNetworkError(error: unknown) {
   return axios.isAxiosError(error) && !error.response;
 }
 
+export function isUnauthorizedError(error: unknown) {
+  return axios.isAxiosError(error) && error.response?.status === 401;
+}
+
 export function toProduct(product: ApiProduct): Product {
   return {
     id: product.id,

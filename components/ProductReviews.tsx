@@ -9,6 +9,7 @@ import {
   deleteProductReview,
   fetchProductReviews,
   getApiErrorMessage,
+  isUnauthorizedError,
   isNetworkError,
   ProductReview,
   updateProductReview,
@@ -17,6 +18,10 @@ import {
 interface ProductReviewsProps {
   productId: string | number;
   onRequireAuth: () => void;
+}
+
+function hasAuthToken() {
+  return typeof window !== 'undefined' && Boolean(window.localStorage.getItem('token'));
 }
 
 export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps) {
@@ -34,6 +39,11 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
   const [editContent, setEditContent] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const canWriteReview = Boolean(user) && hasAuthToken();
+  const signInAgainMessage =
+    locale === 'vi'
+      ? 'Vui long dang nhap lai de gui binh luan.'
+      : 'Please sign in again to post a comment.';
 
   const loadReviews = async (nextPage = page) => {
     try {
@@ -62,7 +72,8 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
 
   const submitReview = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!user) {
+    if (!canWriteReview) {
+      setError(signInAgainMessage);
       onRequireAuth();
       return;
     }
@@ -77,6 +88,9 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
     } catch (submitError) {
       if (isNetworkError(submitError)) {
         setError(t('serverError'));
+      } else if (isUnauthorizedError(submitError)) {
+        setError(signInAgainMessage);
+        onRequireAuth();
       } else {
         setError(getApiErrorMessage(submitError));
       }
@@ -103,7 +117,12 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
       setEditingId(null);
       await loadReviews(page);
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError));
+      if (isUnauthorizedError(submitError)) {
+        setError(signInAgainMessage);
+        onRequireAuth();
+      } else {
+        setError(getApiErrorMessage(submitError));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +134,12 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
       await deleteProductReview(reviewId);
       await loadReviews(page);
     } catch (submitError) {
-      setError(getApiErrorMessage(submitError));
+      if (isUnauthorizedError(submitError)) {
+        setError(signInAgainMessage);
+        onRequireAuth();
+      } else {
+        setError(getApiErrorMessage(submitError));
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -164,13 +188,16 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
           onChange={(event) => setContent(event.target.value)}
           rows={3}
           className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-amber-900 focus:outline-none focus:ring-2 focus:ring-amber-900/20"
-          placeholder={user ? t('writeComment') : t('signInToComment')}
-          disabled={!user || isSubmitting}
+          placeholder={canWriteReview ? t('writeComment') : t('signInToComment')}
+          disabled={!canWriteReview || isSubmitting}
         />
         <div className="mt-3 flex justify-end">
           <button
-            type={user ? 'submit' : 'button'}
-            onClick={!user ? onRequireAuth : undefined}
+            type={canWriteReview ? 'submit' : 'button'}
+            onClick={!canWriteReview ? () => {
+              setError(signInAgainMessage);
+              onRequireAuth();
+            } : undefined}
             disabled={isSubmitting}
             className="rounded-lg bg-amber-900 px-5 py-2 font-medium text-white hover:bg-amber-800 disabled:opacity-50"
           >
