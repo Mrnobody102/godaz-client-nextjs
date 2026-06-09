@@ -1173,6 +1173,15 @@ function toOrderEvent(event: NonNullable<ApiOrderResponse['events']>[number]): O
 
 export function getApiErrorMessage(error: unknown) {
   if (axios.isAxiosError(error)) {
+    if (!error.response) {
+      return 'Server connection error. Please try again later.';
+    }
+    if (error.response.status === 401) {
+      return 'Please sign in again.';
+    }
+    if (error.response.status === 403) {
+      return 'You do not have permission to perform this action.';
+    }
     const data = (error as AxiosError<{ message?: string; errors?: string[] }>).response?.data;
     return data?.message || data?.errors?.join(', ') || error.message;
   }

@@ -42,6 +42,16 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function localAuthFallbackEnabled() {
+  return process.env.NEXT_PUBLIC_ENABLE_LOCAL_AUTH_FALLBACK === 'true';
+}
+
+function clearStoredSession() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem('user');
+  localStorage.removeItem('token');
+}
+
 function toUser(user: AuthUser): User {
   return {
     id: user.id,
@@ -101,20 +111,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
+    const storedToken = localStorage.getItem('token');
     if (storedUser) {
       try {
-        setUser(JSON.parse(storedUser));
-        void syncCartWithServer();
+        if (storedToken || localAuthFallbackEnabled()) {
+          setUser(JSON.parse(storedUser));
+          void syncCartWithServer();
+        } else {
+          clearStoredSession();
+        }
       } catch (error) {
         console.error('Error parsing stored user:', error);
+        clearStoredSession();
       }
     }
     setIsLoading(false);
 
     const handleUnauthorized = () => {
       setUser(null);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
+      clearStoredSession();
     };
 
     window.addEventListener('unauthorized', handleUnauthorized);
@@ -156,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       persistSession(toUser(response.user), response.token);
       return true;
     } catch (error) {
-      if (isNetworkError(error)) {
+      if (isNetworkError(error) && localAuthFallbackEnabled()) {
         return loginWithLocalStorage(email, password);
       }
       return false;
@@ -213,7 +228,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       persistSession(toUser(response.user), response.token);
       return true;
     } catch (error) {
-      if (isNetworkError(error)) {
+      if (isNetworkError(error) && localAuthFallbackEnabled()) {
         return registerWithLocalStorage(name, email, password);
       }
       return false;
@@ -230,8 +245,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    clearStoredSession();
   };
 
   return (

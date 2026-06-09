@@ -204,6 +204,24 @@ describe('api transformers and errors', () => {
     expect(getApiErrorMessage(new Error('boom'))).toBe('Unexpected error');
   });
 
+  it('returns user-safe messages for auth and network API errors', () => {
+    expect(getApiErrorMessage({ isAxiosError: true })).toBe(
+      'Server connection error. Please try again later.'
+    );
+    expect(
+      getApiErrorMessage({
+        isAxiosError: true,
+        response: { status: 401, data: {} },
+      })
+    ).toBe('Please sign in again.');
+    expect(
+      getApiErrorMessage({
+        isAxiosError: true,
+        response: { status: 403, data: {} },
+      })
+    ).toBe('You do not have permission to perform this action.');
+  });
+
   it('normalizes production order and payment statuses', () => {
     expect(normalizeOrderStatus('PENDING_PAYMENT')).toBe('pending_payment');
     expect(normalizeOrderStatus('confirmed')).toBe('processing');
