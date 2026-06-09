@@ -42,7 +42,7 @@ export function ProductReviews({ productId, onRequireAuth }: ProductReviewsProps
   const canWriteReview = Boolean(user) && hasAuthToken();
   const signInAgainMessage =
     locale === 'vi'
-      ? 'Vui long dang nhap lai de gui binh luan.'
+      ? 'Vui lòng đăng nhập lại để gửi bình luận.'
       : 'Please sign in again to post a comment.';
 
   const loadReviews = async (nextPage = page) => {

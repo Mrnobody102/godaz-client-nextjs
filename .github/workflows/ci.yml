@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [master, feat/**]
+    branches: [main, develop]
   pull_request:
-    branches: [master]
+    branches: [main]
 
 jobs:
-  test:
+  quality-gate:
     runs-on: ubuntu-latest
 
     steps:
@@ -23,17 +23,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
       - name: Lint
         run: npm run lint
+
+      - name: Encoding smoke
+        run: npm run test:encoding
+
+      - name: API contract tests
+        run: npm run test:api
 
       - name: Build
         run: npm run build
 
-      - name: API contract tests
-        run: npm run test:api
+      - name: Production dependency audit
+        run: npm run audit:prod
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
 
       - name: E2E tests
         run: npm run test:e2e
