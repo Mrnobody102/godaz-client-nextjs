@@ -6,7 +6,13 @@ import { useRouter } from '@/i18n/routing';
 import { AlertCircle, ArrowLeft, MapPin, Ticket, Truck, X } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { Footer } from '@/components/Footer';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Cart } from '@/components/Cart';
 import { AuthModal } from '@/components/AuthModal';
 import useCartStore from '@/stores/cartStore';
@@ -88,14 +94,22 @@ export default function CheckoutClient() {
     note: '',
   });
 
-  const [paymentGateways, setPaymentGateways] = useState<PaymentGatewayAvailability[]>([]);
+  const [paymentGateways, setPaymentGateways] = useState<
+    PaymentGatewayAvailability[]
+  >([]);
 
-  const { items: cartItems, clearCart, updateQuantity, removeItem } = useCartStore();
+  const {
+    items: cartItems,
+    clearCart,
+    updateQuantity,
+    removeItem,
+  } = useCartStore();
   const { addOrder } = useOrderStore();
 
   const cartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = cartItems.reduce((sum, item) => {
-    const price = typeof item.price === 'string' ? parseFloat(item.price) : item.price;
+    const price =
+      typeof item.price === 'string' ? parseFloat(item.price) : item.price;
     return sum + price * item.quantity;
   }, 0);
   const stockIssues = cartItems.filter(
@@ -166,7 +180,9 @@ export default function CheckoutClient() {
       .then((nextAddresses) => {
         if (!active) return;
         setAddresses(nextAddresses);
-        const preferred = nextAddresses.find((address) => address.defaultAddress) || nextAddresses[0];
+        const preferred =
+          nextAddresses.find((address) => address.defaultAddress) ||
+          nextAddresses[0];
         if (preferred) {
           setSelectedAddressId(String(preferred.id));
           applyAddress(preferred);
@@ -184,7 +200,9 @@ export default function CheckoutClient() {
   useEffect(() => {
     let active = true;
     if (formData.province) {
-      const province = provinces.find((current) => current.name === formData.province);
+      const province = provinces.find(
+        (current) => current.name === formData.province
+      );
       if (province) {
         setIsLoadingAddress(true);
         fetch(`https://provinces.open-api.vn/api/v2/p/${province.code}?depth=2`)
@@ -235,7 +253,11 @@ export default function CheckoutClient() {
       }))
       .filter((item) => Number.isFinite(item.productId));
 
-    if (numericItems.length === 0 || numericItems.length !== cartItems.length || !shippingMethodCode) {
+    if (
+      numericItems.length === 0 ||
+      numericItems.length !== cartItems.length ||
+      !shippingMethodCode
+    ) {
       setQuote(null);
       setQuoteError('');
       return;
@@ -286,7 +308,10 @@ export default function CheckoutClient() {
     try {
       const updated = await setDefaultUserAddress(address.id);
       setAddresses((current) =>
-        current.map((item) => ({ ...item, defaultAddress: item.id === updated.id }))
+        current.map((item) => ({
+          ...item,
+          defaultAddress: item.id === updated.id,
+        }))
       );
     } catch (addressError) {
       setError(getApiErrorMessage(addressError));
@@ -296,7 +321,9 @@ export default function CheckoutClient() {
   const handleDeleteAddress = async (address: UserAddress) => {
     try {
       await deleteUserAddress(address.id);
-      setAddresses((current) => current.filter((item) => item.id !== address.id));
+      setAddresses((current) =>
+        current.filter((item) => item.id !== address.id)
+      );
       if (selectedAddressId === String(address.id)) {
         setSelectedAddressId('manual');
       }
@@ -329,14 +356,18 @@ export default function CheckoutClient() {
     setError('');
 
     if (!shippingMethodCode) {
-      setError(locale === 'vi' ? 'Vui long chon phuong thuc giao hang.' : 'Please choose a shipping method.');
+      setError(
+        locale === 'vi'
+          ? 'Vui lòng chọn phương thức giao hàng.'
+          : 'Please choose a shipping method.'
+      );
       return;
     }
 
     if (paymentMethod !== 'cod' && !user) {
       setError(
         locale === 'vi'
-          ? 'Vui long dang nhap de thanh toan truc tuyen.'
+          ? 'Vui lòng đăng nhập để thanh toán trực tuyến.'
           : 'Please sign in to use online payment.'
       );
       setIsAuthModalOpen(true);
@@ -346,7 +377,7 @@ export default function CheckoutClient() {
     if (hasStockIssue) {
       setError(
         locale === 'vi'
-          ? `Co san pham vuot qua ton kho: ${stockIssueNames}.`
+          ? `Có sản phẩm vượt quá tồn kho: ${stockIssueNames}.`
           : `Some products exceed available stock: ${stockIssueNames}.`
       );
       return;
@@ -370,12 +401,20 @@ export default function CheckoutClient() {
     };
 
     if (!customer.name || !customer.address || !customer.phone) {
-      setError(locale === 'vi' ? 'Vui long nhap du thong tin giao hang.' : 'Please complete shipping information.');
+      setError(
+        locale === 'vi'
+          ? 'Vui lòng nhập đủ thông tin giao hàng.'
+          : 'Please complete shipping information.'
+      );
       return;
     }
 
     if (!isValidPhone(customer.phone)) {
-      setError(locale === 'vi' ? 'So dien thoai chua hop le.' : 'Please enter a valid phone number.');
+      setError(
+        locale === 'vi'
+          ? 'Số điện thoại chưa hợp lệ.'
+          : 'Please enter a valid phone number.'
+      );
       return;
     }
 
@@ -386,7 +425,8 @@ export default function CheckoutClient() {
         .map((item) => ({
           productId: Number(item.id),
           variantId:
-            typeof item.variantId === 'number' && Number.isFinite(item.variantId)
+            typeof item.variantId === 'number' &&
+            Number.isFinite(item.variantId)
               ? item.variantId
               : undefined,
           quantity: item.quantity,
@@ -398,7 +438,9 @@ export default function CheckoutClient() {
       }
 
       let addressId =
-        user && selectedAddressId !== 'manual' ? Number(selectedAddressId) : undefined;
+        user && selectedAddressId !== 'manual'
+          ? Number(selectedAddressId)
+          : undefined;
 
       if (user && saveAddress && !addressId) {
         const savedAddress = await createUserAddress({
@@ -441,7 +483,7 @@ export default function CheckoutClient() {
         apiMessage && !apiMessage.includes('status code')
           ? apiMessage
           : locale === 'vi'
-            ? 'Khong the dat hang. Vui long kiem tra lai.'
+            ? 'Không thể đặt hàng. Vui lòng kiểm tra lại.'
             : 'Could not place the order. Please check details and try again.'
       );
     } finally {
@@ -473,7 +515,10 @@ export default function CheckoutClient() {
           </Link>
         </div>
 
-        <h1 data-testid="checkout-title" className="text-3xl font-bold text-gray-900 mb-8">
+        <h1
+          data-testid="checkout-title"
+          className="text-3xl font-bold text-gray-900 mb-8"
+        >
           {t('title')}
         </h1>
 
@@ -482,7 +527,7 @@ export default function CheckoutClient() {
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
               {locale === 'vi'
-                ? 'Ban co the dat COD nhanh. Dang nhap de dung thanh toan truc tuyen va luu dia chi.'
+                ? 'Bạn có thể đặt COD nhanh. Đăng nhập để dùng thanh toán trực tuyến và lưu địa chỉ.'
                 : 'You can place a COD guest order. Sign in for online payment and saved addresses.'}
             </p>
           </div>
@@ -500,7 +545,7 @@ export default function CheckoutClient() {
             <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
             <p className="text-sm">
               {locale === 'vi'
-                ? `Co san pham vuot qua ton kho: ${stockIssueNames}.`
+                ? `Có sản phẩm vượt quá tồn kho: ${stockIssueNames}.`
                 : `Some cart items exceed available stock: ${stockIssueNames}.`}
             </p>
           </div>
@@ -508,8 +553,15 @@ export default function CheckoutClient() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-2/3">
-            <form id="checkout-form" onSubmit={handleCheckout} className="space-y-8">
-              <div data-testid="checkout-shipping-section" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
+            <form
+              id="checkout-form"
+              onSubmit={handleCheckout}
+              className="space-y-8"
+            >
+              <div
+                data-testid="checkout-shipping-section"
+                className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100"
+              >
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <MapPin className="w-5 h-5 text-amber-900" />
                   {t('shipping')}
@@ -518,18 +570,26 @@ export default function CheckoutClient() {
                 {user && addresses.length > 0 && (
                   <div className="mb-5 rounded-xl border border-gray-200 p-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {locale === 'vi' ? 'Dia chi da luu' : 'Saved address'}
+                      {locale === 'vi' ? 'Địa chỉ đã lưu' : 'Saved address'}
                     </label>
-                    <Select value={selectedAddressId} onValueChange={handleSelectAddress}>
+                    <Select
+                      value={selectedAddressId}
+                      onValueChange={handleSelectAddress}
+                    >
                       <SelectTrigger className="w-full bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="manual">
-                          {locale === 'vi' ? 'Nhap dia chi moi' : 'Enter a new address'}
+                          {locale === 'vi'
+                            ? 'Nhập địa chỉ mới'
+                            : 'Enter a new address'}
                         </SelectItem>
                         {addresses.map((address) => (
-                          <SelectItem key={address.id} value={String(address.id)}>
+                          <SelectItem
+                            key={address.id}
+                            value={String(address.id)}
+                          >
                             {address.recipientName} - {addressToLine(address)}
                           </SelectItem>
                         ))}
@@ -537,14 +597,25 @@ export default function CheckoutClient() {
                     </Select>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {addresses.map((address) => (
-                        <div key={address.id} className="flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-600">
+                        <div
+                          key={address.id}
+                          className="flex items-center gap-2 rounded-full bg-gray-50 px-3 py-1 text-xs text-gray-600"
+                        >
                           <span>{address.recipientName}</span>
                           {!address.defaultAddress && (
-                            <button type="button" className="text-amber-900" onClick={() => handleSetDefaultAddress(address)}>
+                            <button
+                              type="button"
+                              className="text-amber-900"
+                              onClick={() => handleSetDefaultAddress(address)}
+                            >
                               Default
                             </button>
                           )}
-                          <button type="button" className="text-red-600" onClick={() => handleDeleteAddress(address)}>
+                          <button
+                            type="button"
+                            className="text-red-600"
+                            onClick={() => handleDeleteAddress(address)}
+                          >
                             <X className="w-3 h-3" />
                           </button>
                         </div>
@@ -556,33 +627,45 @@ export default function CheckoutClient() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('name')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('name')}
+                      </label>
                       <input
                         type="text"
                         required
                         value={formData.name}
-                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">{t('phone')}</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        {t('phone')}
+                      </label>
                       <input
                         type="tel"
                         required
                         value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, phone: e.target.value })
+                        }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('email')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('email')}
+                    </label>
                     <input
                       type="email"
                       value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, email: e.target.value })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                     />
                   </div>
@@ -590,19 +673,33 @@ export default function CheckoutClient() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('province')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
+                        {t('province')}{' '}
+                        {isLoadingAddress && (
+                          <span className="text-amber-900 animate-pulse text-xs ml-1">
+                            ...
+                          </span>
+                        )}
                       </label>
                       <Select
                         required
                         value={formData.province}
-                        onValueChange={(value) => setFormData({ ...formData, province: value, ward: '' })}
+                        onValueChange={(value) =>
+                          setFormData({
+                            ...formData,
+                            province: value,
+                            ward: '',
+                          })
+                        }
                       >
                         <SelectTrigger className="w-full bg-white h-[42px]">
                           <SelectValue placeholder={t('selectProvince')} />
                         </SelectTrigger>
                         <SelectContent>
                           {provinces.map((province) => (
-                            <SelectItem key={province.code} value={province.name}>
+                            <SelectItem
+                              key={province.code}
+                              value={province.name}
+                            >
                               {province.name}
                             </SelectItem>
                           ))}
@@ -612,25 +709,34 @@ export default function CheckoutClient() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {locale === 'vi' ? 'Quan/Huyen' : 'District'}
+                        {locale === 'vi' ? 'Quận/Huyện' : 'District'}
                       </label>
                       <input
                         type="text"
                         value={formData.district}
-                        onChange={(e) => setFormData({ ...formData, district: e.target.value })}
+                        onChange={(e) =>
+                          setFormData({ ...formData, district: e.target.value })
+                        }
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                       />
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
-                        {t('ward')} {isLoadingAddress && <span className="text-amber-900 animate-pulse text-xs ml-1">...</span>}
+                        {t('ward')}{' '}
+                        {isLoadingAddress && (
+                          <span className="text-amber-900 animate-pulse text-xs ml-1">
+                            ...
+                          </span>
+                        )}
                       </label>
                       <Select
                         required
                         disabled={!formData.province}
                         value={formData.ward}
-                        onValueChange={(value) => setFormData({ ...formData, ward: value })}
+                        onValueChange={(value) =>
+                          setFormData({ ...formData, ward: value })
+                        }
                       >
                         <SelectTrigger className="w-full bg-white disabled:bg-gray-100 h-[42px]">
                           <SelectValue placeholder={t('selectWard')} />
@@ -647,12 +753,19 @@ export default function CheckoutClient() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('detailAddress')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('detailAddress')}
+                    </label>
                     <input
                       type="text"
                       required
                       value={formData.detailAddress}
-                      onChange={(e) => setFormData({ ...formData, detailAddress: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          detailAddress: e.target.value,
+                        })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                     />
                   </div>
@@ -662,19 +775,27 @@ export default function CheckoutClient() {
                       <input
                         type="checkbox"
                         checked={saveAddress}
-                        onChange={(event) => setSaveAddress(event.target.checked)}
+                        onChange={(event) =>
+                          setSaveAddress(event.target.checked)
+                        }
                         className="h-4 w-4 text-amber-900 focus:ring-amber-900"
                       />
-                      {locale === 'vi' ? 'Luu dia chi nay' : 'Save this address'}
+                      {locale === 'vi'
+                        ? 'Lưu địa chỉ này'
+                        : 'Save this address'}
                     </label>
                   )}
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">{t('note')}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      {t('note')}
+                    </label>
                     <textarea
                       rows={2}
                       value={formData.note}
-                      onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, note: e.target.value })
+                      }
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-amber-900 focus:border-amber-900"
                     />
                   </div>
@@ -684,19 +805,25 @@ export default function CheckoutClient() {
               <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
                   <Truck className="w-5 h-5 text-amber-900" />
-                  {locale === 'vi' ? 'Phuong thuc giao hang' : 'Shipping method'}
+                  {locale === 'vi'
+                    ? 'Phương thức giao hàng'
+                    : 'Shipping method'}
                 </h2>
                 <div className="grid gap-3">
                   {shippingMethods.length === 0 ? (
                     <p className="text-sm text-gray-500">
-                      {locale === 'vi' ? 'Chua co phuong thuc giao hang.' : 'No shipping methods available.'}
+                      {locale === 'vi'
+                        ? 'Chưa có phương thức giao hàng.'
+                        : 'No shipping methods available.'}
                     </p>
                   ) : (
                     shippingMethods.map((method) => (
                       <label
                         key={method.code}
                         className={`flex items-center justify-between gap-4 rounded-xl border p-4 transition ${
-                          shippingMethodCode === method.code ? 'border-amber-900 bg-amber-50' : 'border-gray-200'
+                          shippingMethodCode === method.code
+                            ? 'border-amber-900 bg-amber-50'
+                            : 'border-gray-200'
                         }`}
                       >
                         <span className="flex items-center gap-3">
@@ -709,10 +836,13 @@ export default function CheckoutClient() {
                             className="h-4 w-4 text-amber-900 focus:ring-amber-900"
                           />
                           <span>
-                            <span className="block font-medium text-gray-900">{method.name}</span>
+                            <span className="block font-medium text-gray-900">
+                              {method.name}
+                            </span>
                             {method.freeThreshold ? (
                               <span className="block text-xs text-gray-500">
-                                Free from {currency.format(method.freeThreshold)}₫
+                                {locale === 'vi' ? 'Miễn phí từ' : 'Free from'}{' '}
+                                {currency.format(method.freeThreshold)}₫
                               </span>
                             ) : null}
                           </span>
@@ -726,22 +856,31 @@ export default function CheckoutClient() {
                 </div>
               </div>
 
-              <div data-testid="checkout-payment-section" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100">
-                <h2 className="text-xl font-semibold text-gray-900 mb-6">{t('payment')}</h2>
+              <div
+                data-testid="checkout-payment-section"
+                className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100"
+              >
+                <h2 className="text-xl font-semibold text-gray-900 mb-6">
+                  {t('payment')}
+                </h2>
                 <div className="space-y-4">
                   {[
                     ['cod', t('cod')],
                     ['vnpay', t('banking')],
                     ['momo', t('momo')],
                   ].map(([value, label]) => {
-                    const isOnlineGateway = value === 'vnpay' || value === 'momo';
-                    const isDisabled = isOnlineGateway && (!gatewayEnabled[value] || !user);
+                    const isOnlineGateway =
+                      value === 'vnpay' || value === 'momo';
+                    const isDisabled =
+                      isOnlineGateway && (!gatewayEnabled[value] || !user);
 
                     return (
                       <label
                         key={value}
                         className={`flex items-center p-4 border rounded-xl transition-colors ${
-                          isDisabled ? 'cursor-not-allowed opacity-55' : 'cursor-pointer'
+                          isDisabled
+                            ? 'cursor-not-allowed opacity-55'
+                            : 'cursor-pointer'
                         } ${paymentMethod === value ? 'border-amber-900 bg-amber-50' : 'border-gray-200'}`}
                       >
                         <input
@@ -757,7 +896,9 @@ export default function CheckoutClient() {
                           {label}
                           {isOnlineGateway && !gatewayEnabled[value] && (
                             <span className="ml-2 text-xs text-gray-500">
-                              {locale === 'vi' ? '(chua cau hinh)' : '(not configured)'}
+                              {locale === 'vi'
+                                ? '(chưa cấu hình)'
+                                : '(not configured)'}
                             </span>
                           )}
                         </span>
@@ -770,17 +911,27 @@ export default function CheckoutClient() {
           </div>
 
           <div className="w-full lg:w-1/3">
-            <div data-testid="checkout-order-summary" className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 sticky top-24">
+            <div
+              data-testid="checkout-order-summary"
+              className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-100 sticky top-24"
+            >
               <h2 className="text-xl font-semibold text-gray-900 mb-6">
-                {locale === 'vi' ? 'Tom tat don hang' : 'Order Summary'}
+                {locale === 'vi' ? 'Tóm tắt đơn hàng' : 'Order Summary'}
               </h2>
               <div className="space-y-4 mb-6 max-h-64 overflow-y-auto pr-2">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="flex justify-between items-center text-sm">
+                  <div
+                    key={item.id}
+                    className="flex justify-between items-center text-sm"
+                  >
                     <div className="flex-1 pr-4">
-                      <p className="font-medium text-gray-900 truncate">{item.name}</p>
+                      <p className="font-medium text-gray-900 truncate">
+                        {item.name}
+                      </p>
                       {item.variantName && (
-                        <p className="text-xs text-gray-500 truncate">{item.variantName}</p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {item.variantName}
+                        </p>
                       )}
                       <p className="text-gray-500">
                         {locale === 'vi' ? 'SL:' : 'Qty:'} {item.quantity}
@@ -788,8 +939,9 @@ export default function CheckoutClient() {
                     </div>
                     <span className="font-medium text-gray-900">
                       {currency.format(
-                        (typeof item.price === 'string' ? parseFloat(item.price) : item.price) *
-                          item.quantity
+                        (typeof item.price === 'string'
+                          ? parseFloat(item.price)
+                          : item.price) * item.quantity
                       )}
                       ₫
                     </span>
@@ -800,7 +952,7 @@ export default function CheckoutClient() {
               <div className="mb-5 rounded-xl border border-gray-200 p-3">
                 <label className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
                   <Ticket className="w-4 h-4 text-amber-900" />
-                  {locale === 'vi' ? 'Ma giam gia' : 'Coupon'}
+                  {locale === 'vi' ? 'Mã giảm giá' : 'Coupon'}
                 </label>
                 <div className="flex gap-2">
                   <input
@@ -810,50 +962,68 @@ export default function CheckoutClient() {
                     className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-amber-900 focus:ring-amber-900"
                   />
                   {appliedCoupon ? (
-                    <button type="button" onClick={clearCoupon} className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700">
+                    <button
+                      type="button"
+                      onClick={clearCoupon}
+                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700"
+                    >
                       Clear
                     </button>
                   ) : (
-                    <button type="button" onClick={applyCoupon} className="rounded-lg bg-amber-900 px-3 py-2 text-sm font-medium text-white">
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      className="rounded-lg bg-amber-900 px-3 py-2 text-sm font-medium text-white"
+                    >
                       Apply
                     </button>
                   )}
                 </div>
                 {appliedCoupon && (
-                  <p className="mt-2 text-xs font-medium text-emerald-700">{appliedCoupon}</p>
+                  <p className="mt-2 text-xs font-medium text-emerald-700">
+                    {appliedCoupon}
+                  </p>
                 )}
               </div>
 
               <div className="border-t border-gray-200 pt-4 mb-6 space-y-3 text-sm">
                 <div className="flex justify-between text-gray-700">
-                  <span>{locale === 'vi' ? 'Tam tinh' : 'Subtotal'}</span>
+                  <span>{locale === 'vi' ? 'Tạm tính' : 'Subtotal'}</span>
                   <span>{currency.format(displayedSubtotal)}₫</span>
                 </div>
                 <div className="flex justify-between text-gray-700">
-                  <span>{locale === 'vi' ? 'Phi giao hang' : 'Shipping'}</span>
+                  <span>{locale === 'vi' ? 'Phí giao hàng' : 'Shipping'}</span>
                   <span>{currency.format(displayedShipping)}₫</span>
                 </div>
                 {displayedDiscount > 0 && (
                   <div className="flex justify-between text-emerald-700">
-                    <span>{locale === 'vi' ? 'Giam gia' : 'Discount'}</span>
+                    <span>{locale === 'vi' ? 'Giảm giá' : 'Discount'}</span>
                     <span>-{currency.format(displayedDiscount)}₫</span>
                   </div>
                 )}
                 <div className="flex justify-between items-center text-lg font-bold text-gray-900 pt-3 border-t border-gray-100">
-                  <span>{locale === 'vi' ? 'Tong cong' : 'Total'}</span>
-                  <span className="text-amber-900">{currency.format(displayedTotal)}₫</span>
+                  <span>{locale === 'vi' ? 'Tổng cộng' : 'Total'}</span>
+                  <span className="text-amber-900">
+                    {currency.format(displayedTotal)}₫
+                  </span>
                 </div>
               </div>
               <button
                 data-testid="checkout-submit"
                 type="submit"
                 form="checkout-form"
-                disabled={cartItems.length === 0 || isSubmitting || hasStockIssue || !shippingMethodCode || Boolean(quoteError)}
+                disabled={
+                  cartItems.length === 0 ||
+                  isSubmitting ||
+                  hasStockIssue ||
+                  !shippingMethodCode ||
+                  Boolean(quoteError)
+                }
                 className="w-full bg-amber-900 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isSubmitting
                   ? locale === 'vi'
-                    ? 'Dang dat hang...'
+                    ? 'Đang đặt hàng...'
                     : 'Placing order...'
                   : t('placeOrder')}
               </button>

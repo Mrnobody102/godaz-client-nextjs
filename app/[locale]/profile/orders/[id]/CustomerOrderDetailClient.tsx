@@ -24,14 +24,14 @@ import { Order, OrderStatus, normalizeOrderStatus } from '@/stores/orderStore';
 
 function statusLabel(status: OrderStatus, locale: string) {
   const vi: Record<OrderStatus, string> = {
-    draft: 'Ban nhap',
-    pending_payment: 'Cho thanh toan',
-    paid: 'Da thanh toan',
-    processing: 'Dang xu ly',
-    shipped: 'Dang giao',
-    delivered: 'Da giao',
-    cancelled: 'Da huy',
-    refunded: 'Da hoan tien',
+    draft: 'Bản nháp',
+    pending_payment: 'Chờ thanh toán',
+    paid: 'Đã thanh toán',
+    processing: 'Đang xử lý',
+    shipped: 'Đang giao',
+    delivered: 'Đã giao',
+    cancelled: 'Đã hủy',
+    refunded: 'Đã hoàn tiền',
   };
   const en: Record<OrderStatus, string> = {
     draft: 'Draft',
@@ -120,16 +120,19 @@ export default function CustomerOrderDetailClient() {
           className="mb-8 inline-flex items-center text-amber-900 hover:text-amber-700 transition-colors font-medium"
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          {locale === 'vi' ? 'Quay lai don hang' : 'Back to orders'}
+          {locale === 'vi' ? 'Quay lại đơn hàng' : 'Back to orders'}
         </Link>
 
         {isLoading ? (
           <div className="rounded-2xl border border-gray-100 bg-white p-10 text-center text-gray-500">
-            {locale === 'vi' ? 'Dang tai don hang...' : 'Loading order...'}
+            {locale === 'vi' ? 'Đang tải đơn hàng...' : 'Loading order...'}
           </div>
         ) : error || !order ? (
           <div className="rounded-2xl border border-red-100 bg-red-50 p-8 text-red-700">
-            {error || (locale === 'vi' ? 'Khong tim thay don hang.' : 'Order not found.')}
+            {error ||
+              (locale === 'vi'
+                ? 'Không tìm thấy đơn hàng.'
+                : 'Order not found.')}
           </div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
@@ -138,10 +141,12 @@ export default function CustomerOrderDetailClient() {
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-sm text-gray-500">
-                      {new Date(order.date).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
+                      {new Date(order.date).toLocaleString(
+                        locale === 'vi' ? 'vi-VN' : 'en-US'
+                      )}
                     </p>
                     <h1 className="mt-1 text-2xl font-bold text-gray-900">
-                      {locale === 'vi' ? 'Don hang' : 'Order'} #{order.id}
+                      {locale === 'vi' ? 'Đơn hàng' : 'Order'} #{order.id}
                     </h1>
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full bg-gray-50 px-4 py-2 text-sm font-medium text-gray-700">
@@ -154,20 +159,30 @@ export default function CustomerOrderDetailClient() {
               <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
                   <Package className="w-5 h-5 text-amber-900" />
-                  {locale === 'vi' ? 'San pham' : 'Items'}
+                  {locale === 'vi' ? 'Sản phẩm' : 'Items'}
                 </h2>
                 <div className="space-y-4">
                   {order.items.map((item) => (
-                    <div key={item.id} className="flex items-center justify-between gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0">
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between gap-4 border-b border-gray-100 pb-4 last:border-0 last:pb-0"
+                    >
                       <div className="flex min-w-0 items-center gap-4">
                         <div className="h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
+                          <img
+                            src={item.image}
+                            alt={item.name}
+                            className="h-full w-full object-cover"
+                          />
                         </div>
                         <div className="min-w-0">
-                          <p className="truncate font-medium text-gray-900">{item.name}</p>
+                          <p className="truncate font-medium text-gray-900">
+                            {item.name}
+                          </p>
                           <p className="text-sm text-gray-500">
-                            {locale === 'vi' ? 'So luong' : 'Qty'}: {item.quantity}
+                            {locale === 'vi' ? 'Số lượng' : 'Qty'}:{' '}
+                            {item.quantity}
                           </p>
                         </div>
                       </div>
@@ -187,18 +202,28 @@ export default function CustomerOrderDetailClient() {
                 <div className="space-y-4">
                   {(order.events || []).length === 0 ? (
                     <p className="text-sm text-gray-500">
-                      {locale === 'vi' ? 'Chua co timeline.' : 'No timeline yet.'}
+                      {locale === 'vi'
+                        ? 'Chưa có timeline.'
+                        : 'No timeline yet.'}
                     </p>
                   ) : (
                     order.events?.map((event) => (
-                      <div key={`${event.createdAt}-${event.toStatus}`} className="flex gap-3">
+                      <div
+                        key={`${event.createdAt}-${event.toStatus}`}
+                        className="flex gap-3"
+                      >
                         <div className="mt-1 h-2.5 w-2.5 rounded-full bg-amber-900" />
                         <div>
                           <p className="font-medium text-gray-900">
-                            {statusLabel(normalizeOrderStatus(event.toStatus), locale)}
+                            {statusLabel(
+                              normalizeOrderStatus(event.toStatus),
+                              locale
+                            )}
                           </p>
                           <p className="text-sm text-gray-500">
-                            {new Date(event.createdAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
+                            {new Date(event.createdAt).toLocaleString(
+                              locale === 'vi' ? 'vi-VN' : 'en-US'
+                            )}
                             {event.reason ? ` - ${event.reason}` : ''}
                           </p>
                         </div>
@@ -213,26 +238,38 @@ export default function CustomerOrderDetailClient() {
               <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
                   <ReceiptText className="w-5 h-5 text-amber-900" />
-                  {locale === 'vi' ? 'Tong tien' : 'Cost breakdown'}
+                  {locale === 'vi' ? 'Tổng tiền' : 'Cost breakdown'}
                 </h2>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between text-gray-700">
-                    <span>{locale === 'vi' ? 'Tam tinh' : 'Subtotal'}</span>
-                    <span>{currency.format(order.subtotal ?? order.total)}₫</span>
+                    <span>{locale === 'vi' ? 'Tạm tính' : 'Subtotal'}</span>
+                    <span>
+                      {currency.format(order.subtotal ?? order.total)}₫
+                    </span>
                   </div>
                   <div className="flex justify-between text-gray-700">
-                    <span>{order.shippingMethod?.name || (locale === 'vi' ? 'Giao hang' : 'Shipping')}</span>
+                    <span>
+                      {order.shippingMethod?.name ||
+                        (locale === 'vi' ? 'Giao hàng' : 'Shipping')}
+                    </span>
                     <span>{currency.format(order.shippingFee ?? 0)}₫</span>
                   </div>
                   {(order.discountAmount ?? 0) > 0 && (
                     <div className="flex justify-between text-emerald-700">
-                      <span>{order.couponCode || (locale === 'vi' ? 'Giam gia' : 'Discount')}</span>
-                      <span>-{currency.format(order.discountAmount ?? 0)}₫</span>
+                      <span>
+                        {order.couponCode ||
+                          (locale === 'vi' ? 'Giảm giá' : 'Discount')}
+                      </span>
+                      <span>
+                        -{currency.format(order.discountAmount ?? 0)}₫
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between border-t border-gray-100 pt-3 text-lg font-bold text-gray-900">
-                    <span>{locale === 'vi' ? 'Tong cong' : 'Total'}</span>
-                    <span className="text-amber-900">{currency.format(order.total)}₫</span>
+                    <span>{locale === 'vi' ? 'Tổng cộng' : 'Total'}</span>
+                    <span className="text-amber-900">
+                      {currency.format(order.total)}₫
+                    </span>
                   </div>
                 </div>
               </div>
@@ -240,39 +277,52 @@ export default function CustomerOrderDetailClient() {
               <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
                   <MapPin className="w-5 h-5 text-amber-900" />
-                  {locale === 'vi' ? 'Giao den' : 'Deliver to'}
+                  {locale === 'vi' ? 'Giao đến' : 'Deliver to'}
                 </h2>
                 <p className="font-medium text-gray-900">
                   {order.customer.name} - {order.customer.phone}
                 </p>
-                <p className="mt-1 text-sm text-gray-600">{order.customer.address}</p>
+                <p className="mt-1 text-sm text-gray-600">
+                  {order.customer.address}
+                </p>
                 {order.customer.note && (
-                  <p className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-600">{order.customer.note}</p>
+                  <p className="mt-3 rounded-lg bg-gray-50 p-3 text-sm text-gray-600">
+                    {order.customer.note}
+                  </p>
                 )}
               </div>
 
               <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-gray-900">
                   <CreditCard className="w-5 h-5 text-amber-900" />
-                  {locale === 'vi' ? 'Thanh toan' : 'Payment'}
+                  {locale === 'vi' ? 'Thanh toán' : 'Payment'}
                 </h2>
-                <p className="font-medium uppercase text-gray-900">{order.paymentMethod}</p>
+                <p className="font-medium uppercase text-gray-900">
+                  {order.paymentMethod}
+                </p>
                 {order.paymentStatus && (
-                  <p className="mt-1 text-sm text-gray-500">{order.paymentStatus}</p>
+                  <p className="mt-1 text-sm text-gray-500">
+                    {order.paymentStatus}
+                  </p>
                 )}
                 {order.reservationExpiresAt && (
                   <p className="mt-3 text-sm text-amber-800">
-                    {locale === 'vi' ? 'Giu hang den' : 'Reserved until'}{' '}
-                    {new Date(order.reservationExpiresAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
+                    {locale === 'vi' ? 'Giữ hàng đến' : 'Reserved until'}{' '}
+                    {new Date(order.reservationExpiresAt).toLocaleString(
+                      locale === 'vi' ? 'vi-VN' : 'en-US'
+                    )}
                   </p>
                 )}
                 {order.refundedAt && (
                   <p className="mt-3 text-sm text-gray-600">
-                    {locale === 'vi' ? 'Da hoan tien' : 'Refunded'}
+                    {locale === 'vi' ? 'Đã hoàn tiền' : 'Refunded'}
                     {order.refundAmount != null
                       ? ` ${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(order.refundAmount)}₫`
                       : ''}{' '}
-                    · {new Date(order.refundedAt).toLocaleString(locale === 'vi' ? 'vi-VN' : 'en-US')}
+                    ·{' '}
+                    {new Date(order.refundedAt).toLocaleString(
+                      locale === 'vi' ? 'vi-VN' : 'en-US'
+                    )}
                   </p>
                 )}
               </div>

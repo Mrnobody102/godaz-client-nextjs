@@ -102,9 +102,12 @@
     "tar": "^7.5.16"
   },
   "lint-staged": {
-    "src/**/*.{ts,tsx}": [
+    "{app,components,contexts,lib,stores,tests}/**/*.{ts,tsx}": [
       "eslint --fix",
       "prettier --write"
+    ],
+    "{app,components,contexts,lib,messages,stores,tests,docs,.github}/**/*.{json,md,mjs,ts,tsx,yml,yaml}": [
+      "npm run test:encoding"
     ]
   }
 }

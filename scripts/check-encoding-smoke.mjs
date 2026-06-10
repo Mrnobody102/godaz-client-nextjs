@@ -1,7 +1,17 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-const roots = ['app', 'components', 'contexts', 'lib', 'messages', 'docs', 'tests', '.github'];
+const roots = ['app', 'components', 'contexts', 'lib', 'messages', 'docs', 'stores', 'tests', '.github'];
+const rootFiles = [
+  '.env.example',
+  '.gitignore',
+  'eslint.config.mjs',
+  'next.config.ts',
+  'package.json',
+  'playwright.config.ts',
+  'proxy.ts',
+  'tsconfig.json',
+];
 const ignoredDirectories = new Set([
   '.git',
   '.next',
@@ -22,12 +32,24 @@ const mojibakePatterns = [
   { name: 'broken-common-ca', pattern: /c\u0102\u00a1i/u },
   { name: 'broken-common-co', pattern: /C\u0102\u00b4/u },
 ];
+const accentlessVietnamesePatterns = [
+  { name: 'accentless-vui-long', pattern: /\bVui long\b/u },
+  { name: 'accentless-khong', pattern: /\bKhong\b/u },
+  { name: 'accentless-dang', pattern: /\bDang (nhap|dat|tai|xu ly|giao)\b/u },
+  { name: 'accentless-thanh-toan', pattern: /\b(thanh toan|Thanh toan)\b/u },
+  { name: 'accentless-giao-hang', pattern: /\b(giao hang|Giao hang)\b/u },
+  { name: 'accentless-phuong-thuc', pattern: /\b(Phuong thuc|phuong thuc)\b/u },
+  { name: 'accentless-order-copy', pattern: /\b(Tam tinh|Tong cong|Tong tien|Giam gia|Ma giam gia)\b/u },
+  { name: 'accentless-address-copy', pattern: /\b(Dia chi|Nhap dia|Luu dia|Quan\/Huyen)\b/u },
+  { name: 'accentless-status-copy', pattern: /\b(Cho thanh toan|Da thanh toan|Da giao|Da huy|Da hoan tien)\b/u },
+];
+const blockedPatterns = [...mojibakePatterns, ...accentlessVietnamesePatterns];
 
 const failures = [];
 
 function scanFile(filePath) {
   const contents = readFileSync(filePath, 'utf8');
-  for (const { name, pattern } of mojibakePatterns) {
+  for (const { name, pattern } of blockedPatterns) {
     const match = pattern.exec(contents);
     if (!match) continue;
 
@@ -54,6 +76,10 @@ function walk(directory) {
 
 for (const root of roots) {
   walk(root);
+}
+
+for (const filePath of rootFiles) {
+  scanFile(filePath);
 }
 
 if (failures.length > 0) {
