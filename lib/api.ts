@@ -63,7 +63,10 @@ export interface UpdateProfileRequest {
 }
 
 export async function updateProfile(request: UpdateProfileRequest) {
-  const { data } = await api.put<{ message: string }>('/api/users/profile', request);
+  const { data } = await api.put<{ message: string }>(
+    '/api/users/profile',
+    request
+  );
   return data;
 }
 
@@ -124,6 +127,24 @@ export interface ProductSearchResponse {
   size: number;
 }
 
+export interface ApiProductSuggestion {
+  type?: string | null;
+  label?: string | null;
+  productId?: number | null;
+  categorySlug?: string | null;
+  imageUrl?: string | null;
+  price?: number | string | null;
+}
+
+export interface ProductSuggestion {
+  type: 'product' | 'category';
+  label: string;
+  productId: number | null;
+  categorySlug: string | null;
+  imageUrl: string | null;
+  price: number | null;
+}
+
 export interface ApiAdminCategory {
   id: number;
   name: string;
@@ -160,7 +181,8 @@ export interface ApiAdminProduct {
   updatedAt?: string | null;
 }
 
-export interface AdminProduct extends Omit<ApiAdminProduct, 'price' | 'variants'> {
+export interface AdminProduct
+  extends Omit<ApiAdminProduct, 'price' | 'variants'> {
   price: number;
   variants?: Product['variants'];
 }
@@ -220,7 +242,8 @@ export interface ShippingMethod {
   updatedAt?: string | null;
 }
 
-interface ApiShippingMethod extends Omit<ShippingMethod, 'fee' | 'freeThreshold'> {
+interface ApiShippingMethod
+  extends Omit<ShippingMethod, 'fee' | 'freeThreshold'> {
   fee: number | string;
   freeThreshold?: number | string | null;
 }
@@ -251,7 +274,8 @@ export interface Coupon {
   updatedAt?: string | null;
 }
 
-interface ApiCoupon extends Omit<Coupon, 'value' | 'minSubtotal' | 'maxDiscount'> {
+interface ApiCoupon
+  extends Omit<Coupon, 'value' | 'minSubtotal' | 'maxDiscount'> {
   value: number | string;
   minSubtotal?: number | string | null;
   maxDiscount?: number | string | null;
@@ -565,6 +589,22 @@ export function toProduct(product: ApiProduct): Product {
   };
 }
 
+export function toProductSuggestion(
+  suggestion: ApiProductSuggestion
+): ProductSuggestion {
+  return {
+    type: suggestion.type === 'category' ? 'category' : 'product',
+    label: suggestion.label || '',
+    productId: suggestion.productId ?? null,
+    categorySlug: suggestion.categorySlug ?? null,
+    imageUrl: suggestion.imageUrl ?? null,
+    price:
+      suggestion.price === null || typeof suggestion.price === 'undefined'
+        ? null
+        : Number(suggestion.price),
+  };
+}
+
 export function toAdminProduct(product: ApiAdminProduct): AdminProduct {
   return {
     ...product,
@@ -573,7 +613,9 @@ export function toAdminProduct(product: ApiAdminProduct): AdminProduct {
   };
 }
 
-function toProductVariant(variant: ApiProductVariant): NonNullable<Product['variants']>[number] {
+function toProductVariant(
+  variant: ApiProductVariant
+): NonNullable<Product['variants']>[number] {
   return {
     ...variant,
     price: Number(variant.price),
@@ -589,7 +631,8 @@ export function toShippingMethod(method: ApiShippingMethod): ShippingMethod {
     ...method,
     fee: Number(method.fee),
     freeThreshold:
-      method.freeThreshold === null || typeof method.freeThreshold === 'undefined'
+      method.freeThreshold === null ||
+      typeof method.freeThreshold === 'undefined'
         ? null
         : Number(method.freeThreshold),
   };
@@ -610,7 +653,9 @@ export function toCoupon(coupon: ApiCoupon): Coupon {
   };
 }
 
-export function toAdminDashboard(data: ApiAdminDashboardResponse): AdminDashboard {
+export function toAdminDashboard(
+  data: ApiAdminDashboardResponse
+): AdminDashboard {
   const kpis = data.kpis || {};
   return {
     from: data.from,
@@ -633,7 +678,9 @@ export function toAdminDashboard(data: ApiAdminDashboardResponse): AdminDashboar
       netRevenue: Number(item.netRevenue ?? 0),
     })),
     lowStockItems: data.lowStockItems || [],
-    pendingPaymentOrders: (data.pendingPaymentOrders || []).map(toDashboardOrderSummary),
+    pendingPaymentOrders: (data.pendingPaymentOrders || []).map(
+      toDashboardOrderSummary
+    ),
     recentOrders: (data.recentOrders || []).map(toDashboardOrderSummary),
   };
 }
@@ -661,7 +708,11 @@ export async function googleLoginRequest(idToken: string) {
   return data;
 }
 
-export async function registerRequest(name: string, email: string, password: string) {
+export async function registerRequest(
+  name: string,
+  email: string,
+  password: string
+) {
   await api.post('/register', {
     name,
     email,
@@ -686,7 +737,7 @@ export async function fetchProducts(params?: {
     params: {
       search: params?.search || undefined,
       category: params?.category || undefined,
-      sort: params?.sort || 'newest',
+      sort: params?.sort || undefined,
       page: params?.page ?? 0,
       size: params?.size ?? 12,
       minPrice: params?.minPrice,
@@ -696,6 +747,19 @@ export async function fetchProducts(params?: {
     },
   });
   return data;
+}
+
+export async function fetchProductSuggestions(query: string, limit = 6) {
+  const { data } = await api.get<ApiProductSuggestion[]>(
+    '/api/products/suggestions',
+    {
+      params: {
+        q: query || undefined,
+        limit,
+      },
+    }
+  );
+  return (data || []).map(toProductSuggestion);
 }
 
 export async function fetchProduct(id: string | number) {
@@ -742,11 +806,15 @@ export async function fetchAdminProduct(id: string | number) {
 }
 
 export async function createAdminProduct(payload: AdminProductPayload) {
-  const { data } = await api.post<ApiAdminProduct>('/api/admin/products', payload, {
-    headers: {
-      'X-Idempotency-Key': getIdempotencyKey('admin-product'),
-    },
-  });
+  const { data } = await api.post<ApiAdminProduct>(
+    '/api/admin/products',
+    payload,
+    {
+      headers: {
+        'X-Idempotency-Key': getIdempotencyKey('admin-product'),
+      },
+    }
+  );
   return toAdminProduct(data);
 }
 
@@ -754,16 +822,23 @@ export async function updateAdminProduct(
   id: string | number,
   payload: AdminProductPayload
 ) {
-  const { data } = await api.put<ApiAdminProduct>(`/api/admin/products/${id}`, payload);
+  const { data } = await api.put<ApiAdminProduct>(
+    `/api/admin/products/${id}`,
+    payload
+  );
   return toAdminProduct(data);
 }
 
 export async function deleteAdminProduct(id: string | number) {
-  const { data } = await api.delete<ApiAdminProduct>(`/api/admin/products/${id}`);
+  const { data } = await api.delete<ApiAdminProduct>(
+    `/api/admin/products/${id}`
+  );
   return toAdminProduct(data);
 }
 
-export async function fetchAdminCategories(params?: { active?: boolean | 'all' }) {
+export async function fetchAdminCategories(params?: {
+  active?: boolean | 'all';
+}) {
   const { data } = await api.get<ApiAdminCategory[]>('/api/admin/categories', {
     params: {
       active:
@@ -776,11 +851,15 @@ export async function fetchAdminCategories(params?: { active?: boolean | 'all' }
 }
 
 export async function createAdminCategory(payload: AdminCategoryPayload) {
-  const { data } = await api.post<ApiAdminCategory>('/api/admin/categories', payload, {
-    headers: {
-      'X-Idempotency-Key': getIdempotencyKey('admin-category'),
-    },
-  });
+  const { data } = await api.post<ApiAdminCategory>(
+    '/api/admin/categories',
+    payload,
+    {
+      headers: {
+        'X-Idempotency-Key': getIdempotencyKey('admin-category'),
+      },
+    }
+  );
   return toAdminCategory(data);
 }
 
@@ -788,17 +867,24 @@ export async function updateAdminCategory(
   id: string | number,
   payload: AdminCategoryPayload
 ) {
-  const { data } = await api.put<ApiAdminCategory>(`/api/admin/categories/${id}`, payload);
+  const { data } = await api.put<ApiAdminCategory>(
+    `/api/admin/categories/${id}`,
+    payload
+  );
   return toAdminCategory(data);
 }
 
 export async function deleteAdminCategory(id: string | number) {
-  const { data } = await api.delete<ApiAdminCategory>(`/api/admin/categories/${id}`);
+  const { data } = await api.delete<ApiAdminCategory>(
+    `/api/admin/categories/${id}`
+  );
   return toAdminCategory(data);
 }
 
 export async function fetchShippingMethods() {
-  const { data } = await api.get<ApiShippingMethod[]>('/api/checkout/shipping-methods');
+  const { data } = await api.get<ApiShippingMethod[]>(
+    '/api/checkout/shipping-methods'
+  );
   return data.map(toShippingMethod);
 }
 
@@ -828,10 +914,14 @@ export async function fetchUserAddresses() {
   return data;
 }
 
-export function toCartProduct(item: ApiCartItem): Product & { quantity: number } {
+export function toCartProduct(
+  item: ApiCartItem
+): Product & { quantity: number } {
   return {
     id: item.productId,
-    cartKey: item.variantId ? `${item.productId}:${item.variantId}` : String(item.productId),
+    cartKey: item.variantId
+      ? `${item.productId}:${item.variantId}`
+      : String(item.productId),
     variantId: item.variantId ?? null,
     variantName: item.variantName ?? null,
     sku: item.sku ?? null,
@@ -853,7 +943,9 @@ export async function fetchCart() {
 }
 
 export async function mergeServerCart(items: CartLinePayload[]) {
-  const { data } = await api.post<ApiCartResponse>('/api/cart/merge', { items });
+  const { data } = await api.post<ApiCartResponse>('/api/cart/merge', {
+    items,
+  });
   return data.items.map(toCartProduct);
 }
 
@@ -867,7 +959,10 @@ export async function updateServerCartLine(item: CartLinePayload) {
   return data.items.map(toCartProduct);
 }
 
-export async function removeServerCartLine(productId: number, variantId?: number | null) {
+export async function removeServerCartLine(
+  productId: number,
+  variantId?: number | null
+) {
   const { data } = await api.delete<ApiCartResponse>('/api/cart/items', {
     params: {
       productId,
@@ -886,13 +981,21 @@ export async function createUserAddress(payload: UserAddressPayload) {
   return data;
 }
 
-export async function updateUserAddress(id: string | number, payload: UserAddressPayload) {
-  const { data } = await api.put<UserAddress>(`/api/users/addresses/${id}`, payload);
+export async function updateUserAddress(
+  id: string | number,
+  payload: UserAddressPayload
+) {
+  const { data } = await api.put<UserAddress>(
+    `/api/users/addresses/${id}`,
+    payload
+  );
   return data;
 }
 
 export async function setDefaultUserAddress(id: string | number) {
-  const { data } = await api.post<UserAddress>(`/api/users/addresses/${id}/default`);
+  const { data } = await api.post<UserAddress>(
+    `/api/users/addresses/${id}/default`
+  );
   return data;
 }
 
@@ -901,11 +1004,15 @@ export async function deleteUserAddress(id: string | number) {
 }
 
 export async function fetchAdminShippingMethods() {
-  const { data } = await api.get<ApiShippingMethod[]>('/api/admin/shipping-methods');
+  const { data } = await api.get<ApiShippingMethod[]>(
+    '/api/admin/shipping-methods'
+  );
   return data.map(toShippingMethod);
 }
 
-export async function createAdminShippingMethod(payload: ShippingMethodPayload) {
+export async function createAdminShippingMethod(
+  payload: ShippingMethodPayload
+) {
   const { data } = await api.post<ApiShippingMethod>(
     '/api/admin/shipping-methods',
     payload
@@ -913,7 +1020,10 @@ export async function createAdminShippingMethod(payload: ShippingMethodPayload) 
   return toShippingMethod(data);
 }
 
-export async function updateAdminShippingMethod(id: string | number, payload: ShippingMethodPayload) {
+export async function updateAdminShippingMethod(
+  id: string | number,
+  payload: ShippingMethodPayload
+) {
   const { data } = await api.put<ApiShippingMethod>(
     `/api/admin/shipping-methods/${id}`,
     payload
@@ -922,7 +1032,9 @@ export async function updateAdminShippingMethod(id: string | number, payload: Sh
 }
 
 export async function deleteAdminShippingMethod(id: string | number) {
-  const { data } = await api.delete<ApiShippingMethod>(`/api/admin/shipping-methods/${id}`);
+  const { data } = await api.delete<ApiShippingMethod>(
+    `/api/admin/shipping-methods/${id}`
+  );
   return toShippingMethod(data);
 }
 
@@ -936,8 +1048,14 @@ export async function createAdminCoupon(payload: CouponPayload) {
   return toCoupon(data);
 }
 
-export async function updateAdminCoupon(id: string | number, payload: CouponPayload) {
-  const { data } = await api.put<ApiCoupon>(`/api/admin/coupons/${id}`, payload);
+export async function updateAdminCoupon(
+  id: string | number,
+  payload: CouponPayload
+) {
+  const { data } = await api.put<ApiCoupon>(
+    `/api/admin/coupons/${id}`,
+    payload
+  );
   return toCoupon(data);
 }
 
@@ -946,7 +1064,11 @@ export async function deleteAdminCoupon(id: string | number) {
   return toCoupon(data);
 }
 
-export async function fetchProductReviews(productId: string | number, page = 0, size = 5) {
+export async function fetchProductReviews(
+  productId: string | number,
+  page = 0,
+  size = 5
+) {
   const { data } = await api.get<ProductReviewPageResponse>(
     `/api/products/${productId}/reviews`,
     {
@@ -971,7 +1093,10 @@ export async function updateProductReview(
   reviewId: string,
   payload: { rating?: number | null; content: string }
 ) {
-  const { data } = await api.put<ProductReview>(`/api/reviews/${reviewId}`, payload);
+  const { data } = await api.put<ProductReview>(
+    `/api/reviews/${reviewId}`,
+    payload
+  );
   return data;
 }
 
@@ -997,11 +1122,16 @@ export async function createOrder(payload: CheckoutPayload) {
 }
 
 export async function fetchPaymentGateways() {
-  const { data } = await api.get<PaymentGatewayAvailability[]>('/api/payments/gateways');
+  const { data } = await api.get<PaymentGatewayAvailability[]>(
+    '/api/payments/gateways'
+  );
   return data;
 }
 
-export async function createPayment(orderId: string, gateway: 'vnpay' | 'momo') {
+export async function createPayment(
+  orderId: string,
+  gateway: 'vnpay' | 'momo'
+) {
   const { data } = await api.post<CreatePaymentResponse>(
     '/api/payments',
     {
@@ -1048,7 +1178,8 @@ export async function fetchAdminOrders(params?: {
 }) {
   const { data } = await api.get<ApiOrderPageResponse>('/api/admin/orders', {
     params: {
-      status: params?.status && params.status !== 'all' ? params.status : undefined,
+      status:
+        params?.status && params.status !== 'all' ? params.status : undefined,
       paymentMethod: params?.paymentMethod || undefined,
       createdFrom: params?.createdFrom || undefined,
       createdTo: params?.createdTo || undefined,
@@ -1065,13 +1196,19 @@ export async function fetchAdminOrders(params?: {
   };
 }
 
-export async function fetchAdminDashboard(params?: { from?: string; to?: string }) {
-  const { data } = await api.get<ApiAdminDashboardResponse>('/api/admin/dashboard', {
-    params: {
-      from: params?.from || undefined,
-      to: params?.to || undefined,
-    },
-  });
+export async function fetchAdminDashboard(params?: {
+  from?: string;
+  to?: string;
+}) {
+  const { data } = await api.get<ApiAdminDashboardResponse>(
+    '/api/admin/dashboard',
+    {
+      params: {
+        from: params?.from || undefined,
+        to: params?.to || undefined,
+      },
+    }
+  );
   return toAdminDashboard(data);
 }
 
@@ -1114,13 +1251,16 @@ function toOrder(order: ApiOrderResponse): Order {
     paymentMethod: order.paymentMethod,
     paymentStatus: normalizePaymentStatus(order.paymentStatus),
     reservationExpiresAt: order.reservationExpiresAt ?? null,
-    refundAmount: order.refundAmount == null ? null : Number(order.refundAmount),
+    refundAmount:
+      order.refundAmount == null ? null : Number(order.refundAmount),
     refundedAt: order.refundedAt ?? null,
     guestAccessToken: order.guestAccessToken ?? null,
     events: (order.events || []).map(toOrderEvent),
     items: order.items.map((item) => ({
       id: item.productId,
-      cartKey: item.variantId ? `${item.productId}:${item.variantId}` : String(item.productId),
+      cartKey: item.variantId
+        ? `${item.productId}:${item.variantId}`
+        : String(item.productId),
       variantId: item.variantId ?? null,
       variantName: item.variantName ?? null,
       sku: item.sku ?? null,
@@ -1139,11 +1279,16 @@ function saveGuestOrderToken(orderId: string, token: string) {
   if (typeof window === 'undefined') return;
   try {
     const existing = window.localStorage.getItem('guestOrderTokens');
-    const tokens = existing ? JSON.parse(existing) as Record<string, string> : {};
+    const tokens = existing
+      ? (JSON.parse(existing) as Record<string, string>)
+      : {};
     tokens[orderId] = token;
     window.localStorage.setItem('guestOrderTokens', JSON.stringify(tokens));
   } catch {
-    window.localStorage.setItem('guestOrderTokens', JSON.stringify({ [orderId]: token }));
+    window.localStorage.setItem(
+      'guestOrderTokens',
+      JSON.stringify({ [orderId]: token })
+    );
   }
 }
 
@@ -1159,11 +1304,15 @@ export function getGuestOrderToken(orderId: string) {
   }
 }
 
-function toOrderEvent(event: NonNullable<ApiOrderResponse['events']>[number]): OrderEvent {
+function toOrderEvent(
+  event: NonNullable<ApiOrderResponse['events']>[number]
+): OrderEvent {
   return {
     actorType: event.actorType,
     actorId: event.actorId,
-    fromStatus: event.fromStatus ? normalizeOrderStatus(event.fromStatus) : null,
+    fromStatus: event.fromStatus
+      ? normalizeOrderStatus(event.fromStatus)
+      : null,
     toStatus: normalizeOrderStatus(event.toStatus),
     reason: event.reason,
     metadata: event.metadata,
@@ -1182,7 +1331,8 @@ export function getApiErrorMessage(error: unknown) {
     if (error.response.status === 403) {
       return 'You do not have permission to perform this action.';
     }
-    const data = (error as AxiosError<{ message?: string; errors?: string[] }>).response?.data;
+    const data = (error as AxiosError<{ message?: string; errors?: string[] }>)
+      .response?.data;
     return data?.message || data?.errors?.join(', ') || error.message;
   }
   return 'Unexpected error';

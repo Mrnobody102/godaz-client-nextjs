@@ -11,9 +11,14 @@ import { toast } from 'sonner';
 interface ProductCardProps {
   product: Product;
   onAddToCart: (product: Product) => boolean | void;
+  priority?: boolean;
 }
 
-export function ProductCard({ product, onAddToCart }: ProductCardProps) {
+export function ProductCard({
+  product,
+  onAddToCart,
+  priority = false,
+}: ProductCardProps) {
   const t = useTranslations('product');
   const tWishlist = useTranslations('wishlist');
   const locale = useLocale();
@@ -58,11 +63,16 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow flex flex-col">
-      <Link href={`/product/${product.id}`} className="relative h-64 w-full block">
+      <Link
+        href={`/product/${product.id}`}
+        className="relative h-64 w-full block"
+      >
         <Image
           src={product.image}
           alt={product.name}
           fill
+          loading="eager"
+          fetchPriority={priority ? 'high' : 'auto'}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className="object-cover hover:scale-105 transition-transform duration-300"
         />
@@ -90,7 +100,9 @@ export function ProductCard({ product, onAddToCart }: ProductCardProps) {
             {product.name}
           </h3>
         </Link>
-        <p className="text-gray-600 text-sm mb-4 flex-1">{product.description}</p>
+        <p className="text-gray-600 text-sm mb-4 flex-1">
+          {product.description}
+        </p>
 
         <div className="flex items-center justify-between gap-3">
           <span className="text-2xl font-bold text-amber-900">

@@ -2,9 +2,17 @@
 
 import { useMemo, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { FilterX, Search, SlidersHorizontal, X } from 'lucide-react';
+import { FilterX, SlidersHorizontal, X } from 'lucide-react';
 
-import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from './ui/sheet';
+import { SearchAutocomplete } from './SearchAutocomplete';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from './ui/sheet';
 
 const PRICE_RANGE_MAX = 1000000;
 const PRICE_PRESETS = [
@@ -75,6 +83,7 @@ export interface ProductFiltersProps {
 
   resultCount: number;
   showOfflineFallback: boolean;
+  recentSearches: string[];
 
   setSearchQuery: (value: string) => void;
   setSelectedCategory: (value: string | null) => void;
@@ -87,16 +96,20 @@ export interface ProductFiltersProps {
 
   resetToFirstPage: () => void;
   clearFilters: () => void;
+  onSearchSubmit: (query: string) => void;
+  onSelectProductSuggestion: (productId: number) => void;
+  onClearRecentSearches: () => void;
 }
 
 export function ProductFilters(props: ProductFiltersProps) {
   const tSearch = useTranslations('search');
   const [mobileOpen, setMobileOpen] = useState(false);
+  const defaultSortOrder = props.searchQuery.trim() ? 'relevance' : 'newest';
 
   const hasActiveFilters =
     props.searchQuery.trim() ||
     props.selectedCategory ||
-    props.sortOrder !== 'newest' ||
+    props.sortOrder !== defaultSortOrder ||
     props.pageSize !== props.defaultPageSize ||
     props.minPrice ||
     props.maxPrice ||
@@ -184,7 +197,9 @@ export function ProductFilters(props: ProductFiltersProps) {
             value={props.minPrice ? formatMoney(Number(props.minPrice)) : ''}
             onChange={(event) => {
               const raw = event.target.value;
-              const parsed = raw ? String(Math.max(0, Number(raw.replace(/\D/g, '')) || 0)) : '';
+              const parsed = raw
+                ? String(Math.max(0, Number(raw.replace(/\D/g, '')) || 0))
+                : '';
               props.setMinPrice(parsed);
               props.resetToFirstPage();
             }}
@@ -201,7 +216,9 @@ export function ProductFilters(props: ProductFiltersProps) {
             value={props.maxPrice ? formatMoney(Number(props.maxPrice)) : ''}
             onChange={(event) => {
               const raw = event.target.value;
-              const parsed = raw ? String(Math.max(0, Number(raw.replace(/\D/g, '')) || 0)) : '';
+              const parsed = raw
+                ? String(Math.max(0, Number(raw.replace(/\D/g, '')) || 0))
+                : '';
               props.setMaxPrice(parsed);
               props.resetToFirstPage();
             }}
@@ -212,7 +229,8 @@ export function ProductFilters(props: ProductFiltersProps) {
 
       <div className="mt-3 grid grid-cols-2 gap-2">
         {PRICE_PRESETS.map((preset) => {
-          const active = props.minPrice === preset.min && props.maxPrice === preset.max;
+          const active =
+            props.minPrice === preset.min && props.maxPrice === preset.max;
           return (
             <button
               key={preset.label}
@@ -234,6 +252,27 @@ export function ProductFilters(props: ProductFiltersProps) {
         })}
       </div>
     </div>
+  );
+
+  const renderSearchBox = () => (
+    <SearchAutocomplete
+      value={props.searchQuery}
+      placeholder={tSearch('placeholder')}
+      recentSearches={props.recentSearches}
+      categorySuggestions={props.categories}
+      inputClassName="block w-full rounded-xl border border-gray-300 bg-white py-3 pl-10 pr-3 text-sm text-gray-900 outline-none focus:border-amber-900 focus:ring-1 focus:ring-amber-900"
+      onChange={(value) => {
+        props.setSearchQuery(value);
+        props.resetToFirstPage();
+      }}
+      onSubmitSearch={props.onSearchSubmit}
+      onSelectCategory={(slug) => {
+        props.setSelectedCategory(slug);
+        props.resetToFirstPage();
+      }}
+      onSelectProduct={props.onSelectProductSuggestion}
+      onClearRecentSearches={props.onClearRecentSearches}
+    />
   );
 
   const categoriesBlock = (
@@ -278,11 +317,27 @@ export function ProductFilters(props: ProductFiltersProps) {
   const checkboxesBlock = (
     <>
       <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
-        <input type="checkbox" checked={props.inStockOnly} onChange={(e)=>{props.setInStockOnly(e.target.checked);props.resetToFirstPage();}} className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"/>
+        <input
+          type="checkbox"
+          checked={props.inStockOnly}
+          onChange={(e) => {
+            props.setInStockOnly(e.target.checked);
+            props.resetToFirstPage();
+          }}
+          className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"
+        />
         {tSearch('inStock')}
       </label>
       <label className="flex items-center gap-3 rounded-xl border border-gray-300 bg-white px-3 py-2.5 text-sm text-gray-700">
-        <input type="checkbox" checked={props.featuredOnly} onChange={(e)=>{props.setFeaturedOnly(e.target.checked);props.resetToFirstPage();}} className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"/>
+        <input
+          type="checkbox"
+          checked={props.featuredOnly}
+          onChange={(e) => {
+            props.setFeaturedOnly(e.target.checked);
+            props.resetToFirstPage();
+          }}
+          className="h-4 w-4 rounded border-gray-300 text-amber-900 focus:ring-amber-900"
+        />
         {tSearch('featured')}
       </label>
     </>
@@ -292,21 +347,7 @@ export function ProductFilters(props: ProductFiltersProps) {
     <>
       <div className="mb-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm lg:hidden">
         <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              placeholder={tSearch('placeholder')}
-              value={props.searchQuery}
-              onChange={(event) => {
-                props.setSearchQuery(event.target.value);
-                props.resetToFirstPage();
-              }}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl bg-white text-sm"
-            />
-          </div>
+          <div className="min-w-0 flex-1">{renderSearchBox()}</div>
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -319,7 +360,10 @@ export function ProductFilters(props: ProductFiltersProps) {
       </div>
 
       <aside className="hidden lg:block lg:sticky lg:top-24 lg:h-fit rounded-2xl border border-gray-200 bg-white p-4 shadow-sm space-y-4">
-        <h3 className="text-base font-semibold text-gray-900">{tSearch('filters')}</h3>
+        <h3 className="text-base font-semibold text-gray-900">
+          {tSearch('filters')}
+        </h3>
+        {renderSearchBox()}
         {hasActiveFilters && (
           <button
             type="button"
@@ -338,19 +382,40 @@ export function ProductFilters(props: ProductFiltersProps) {
       </aside>
 
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="right" className="p-0 flex flex-col gap-0 w-[85vw] sm:w-[400px]">
-          <SheetHeader className="border-b px-4 py-4 shrink-0 bg-white z-10"><SheetTitle>{tSearch('filters')}</SheetTitle></SheetHeader>
+        <SheetContent
+          side="right"
+          className="p-0 flex flex-col gap-0 w-[85vw] sm:w-[400px]"
+        >
+          <SheetHeader className="border-b px-4 py-4 shrink-0 bg-white z-10">
+            <SheetTitle>{tSearch('filters')}</SheetTitle>
+            <SheetDescription className="sr-only">
+              {tSearch('filtersDescription')}
+            </SheetDescription>
+          </SheetHeader>
           <div className="flex-1 overflow-y-auto p-4 space-y-6 bg-gray-50/50">
             {categoriesBlock}
             {priceBlock}
-            <div className="space-y-3">
-              {checkboxesBlock}
-            </div>
+            <div className="space-y-3">{checkboxesBlock}</div>
           </div>
           <SheetFooter className="border-t shrink-0 p-4 bg-white z-10">
             <div className="grid grid-cols-2 gap-3 w-full">
-              <button type="button" onClick={() => setMobileOpen(false)} className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm">{tSearch('apply')}</button>
-              <button type="button" onClick={() => { props.clearFilters(); setMobileOpen(false); }} className="h-11 rounded-xl bg-amber-900 px-4 text-sm font-medium text-white hover:bg-amber-800 shadow-sm">{tSearch('clearFilters')}</button>
+              <button
+                type="button"
+                onClick={() => setMobileOpen(false)}
+                className="h-11 rounded-xl border border-gray-300 bg-white px-4 text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm"
+              >
+                {tSearch('apply')}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  props.clearFilters();
+                  setMobileOpen(false);
+                }}
+                className="h-11 rounded-xl bg-amber-900 px-4 text-sm font-medium text-white hover:bg-amber-800 shadow-sm"
+              >
+                {tSearch('clearFilters')}
+              </button>
             </div>
           </SheetFooter>
         </SheetContent>

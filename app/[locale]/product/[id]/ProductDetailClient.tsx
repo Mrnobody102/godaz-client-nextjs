@@ -25,6 +25,10 @@ import { Link } from '@/i18n/routing';
 import useCartStore from '@/stores/cartStore';
 import useWishlistStore from '@/stores/wishlistStore';
 import { fetchProduct, fetchProducts, toProduct } from '@/lib/api';
+import {
+  getRecentlyViewedProducts,
+  saveRecentlyViewedProduct,
+} from '@/lib/recentlyViewed';
 import { toast } from 'sonner';
 
 interface Props {
@@ -32,17 +36,25 @@ interface Props {
   initialProduct: Product | null;
 }
 
-export default function ProductDetailClient({ productId, initialProduct }: Props) {
+export default function ProductDetailClient({
+  productId,
+  initialProduct,
+}: Props) {
   const t = useTranslations('productDetail');
   const tWishlist = useTranslations('wishlist');
   const locale = useLocale();
   const [product, setProduct] = useState<Product | null>(initialProduct);
   const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [recentlyViewedProducts, setRecentlyViewedProducts] = useState<
+    Product[]
+  >([]);
   const [isLoadingProduct, setIsLoadingProduct] = useState(!initialProduct);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
+    null
+  );
 
   const {
     items: cartItems,
@@ -85,11 +97,32 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
   }, [initialProduct, productId]);
 
   useEffect(() => {
+    setRecentlyViewedProducts(
+      getRecentlyViewedProducts().filter(
+        (item) => String(item.id) !== String(productId)
+      )
+    );
+  }, [productId]);
+
+  useEffect(() => {
+    if (!product) return;
+    setRecentlyViewedProducts(
+      saveRecentlyViewedProduct(product).filter(
+        (item) => String(item.id) !== String(product.id)
+      )
+    );
+  }, [product]);
+
+  useEffect(() => {
     if (!product) return;
     const currentProduct = product;
 
     const fallbackRelated = handicraftProducts
-      .filter((item) => item.category === currentProduct.category && item.id !== currentProduct.id)
+      .filter(
+        (item) =>
+          item.category === currentProduct.category &&
+          item.id !== currentProduct.id
+      )
       .slice(0, 4);
     setRelatedProducts(fallbackRelated);
 
@@ -131,7 +164,8 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
   };
 
   const isWished = product ? isInWishlist(product.id) : false;
-  const activeVariants = product?.variants?.filter((variant) => variant.active) || [];
+  const activeVariants =
+    product?.variants?.filter((variant) => variant.active) || [];
   const selectedVariant =
     activeVariants.find((variant) => variant.id === selectedVariantId) || null;
   const displayImage = selectedVariant?.imageUrl || product?.image || '';
@@ -144,7 +178,10 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
         ...activeVariants
           .map((variant) => variant.imageUrl)
           .filter((imageUrl): imageUrl is string => Boolean(imageUrl)),
-      ].filter((imageUrl, index, images) => imageUrl && images.indexOf(imageUrl) === index)
+      ].filter(
+        (imageUrl, index, images) =>
+          imageUrl && images.indexOf(imageUrl) === index
+      )
     : [];
 
   const priceNum = useMemo(() => {
@@ -251,7 +288,8 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                   fill
                   className="object-cover transition-transform duration-500 hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 50vw"
-                  priority
+                  loading="eager"
+                  fetchPriority="high"
                 />
                 {galleryImages.length > 1 && (
                   <div className="absolute bottom-4 left-4 right-4 flex gap-2 overflow-x-auto rounded-xl bg-white/85 p-2 backdrop-blur">
@@ -264,14 +302,25 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                             handleSelectVariant(null);
                             return;
                           }
-                          const variant = activeVariants.find((item) => item.imageUrl === imageUrl);
+                          const variant = activeVariants.find(
+                            (item) => item.imageUrl === imageUrl
+                          );
                           if (variant) handleSelectVariant(variant.id);
                         }}
                         className={`relative h-14 w-14 shrink-0 overflow-hidden rounded-lg border-2 ${
-                          displayImage === imageUrl ? 'border-amber-900' : 'border-white'
+                          displayImage === imageUrl
+                            ? 'border-amber-900'
+                            : 'border-white'
                         }`}
                       >
-                        <Image src={imageUrl} alt="" fill className="object-cover" sizes="56px" />
+                        <Image
+                          src={imageUrl}
+                          alt=""
+                          fill
+                          loading="eager"
+                          className="object-cover"
+                          sizes="56px"
+                        />
                       </button>
                     ))}
                   </div>
@@ -294,14 +343,14 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                 </div>
                 {typeof product.stock === 'number' && (
                   <p className="text-sm text-gray-500 mb-8">
-                    {locale === 'vi' ? 'Tồn kho:' : 'In stock:'} {stock}
+                    {t('stock')} {stock}
                   </p>
                 )}
 
                 {activeVariants.length > 0 && (
                   <div className="mb-8">
                     <h3 className="text-sm font-bold text-gray-900 mb-3 uppercase tracking-wider">
-                      {locale === 'vi' ? 'Phiên bản' : 'Variant'}
+                      {t('variant')}
                     </h3>
                     <div className="flex flex-wrap gap-2">
                       <button
@@ -313,7 +362,7 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                             : 'border-gray-200 text-gray-700'
                         }`}
                       >
-                        {locale === 'vi' ? 'Mặc định' : 'Default'}
+                        {t('defaultVariant')}
                       </button>
                       {activeVariants.map((variant) => (
                         <button
@@ -372,11 +421,7 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                     className="flex-1 bg-amber-900 hover:bg-amber-800 text-white font-bold py-4 px-8 rounded-2xl transition-all duration-300 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:-translate-y-1 text-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                   >
                     <ShoppingBag className="w-6 h-6" />
-                    {isOutOfStock
-                      ? locale === 'vi'
-                        ? 'Hết hàng'
-                        : 'Sold out'
-                      : t('addToCart')}
+                    {isOutOfStock ? t('soldOut') : t('addToCart')}
                   </button>
 
                   <button
@@ -400,19 +445,19 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 rounded-xl">
                     <Truck className="w-8 h-8 text-amber-900 mb-2" />
                     <span className="text-sm font-medium text-gray-900">
-                      {locale === 'vi' ? 'Giao hàng tận nơi' : 'Fast Delivery'}
+                      {t('delivery')}
                     </span>
                   </div>
                   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 rounded-xl">
                     <Sparkles className="w-8 h-8 text-amber-900 mb-2" />
                     <span className="text-sm font-medium text-gray-900">
-                      {locale === 'vi' ? 'Thủ công 100%' : '100% Handmade'}
+                      {t('handmade')}
                     </span>
                   </div>
                   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 rounded-xl">
                     <ShieldCheck className="w-8 h-8 text-amber-900 mb-2" />
                     <span className="text-sm font-medium text-gray-900">
-                      {locale === 'vi' ? 'Kiểm tra trước khi nhận' : 'Secure Check'}
+                      {t('inspection')}
                     </span>
                   </div>
                 </div>
@@ -430,13 +475,34 @@ export default function ProductDetailClient({ productId, initialProduct }: Props
                   {t('related')}
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {relatedProducts.map((relatedProduct) => (
+                  {relatedProducts.map((relatedProduct, index) => (
                     <ProductCard
                       key={relatedProduct.id}
                       product={relatedProduct}
                       onAddToCart={(nextProduct) => addCartItem(nextProduct)}
+                      priority={index === 0}
                     />
                   ))}
+                </div>
+              </div>
+            )}
+
+            {recentlyViewedProducts.length > 0 && (
+              <div className="mt-16">
+                <h2 className="mb-8 text-2xl font-bold text-gray-900">
+                  {t('recentlyViewed')}
+                </h2>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+                  {recentlyViewedProducts
+                    .slice(0, 4)
+                    .map((recentProduct, index) => (
+                      <ProductCard
+                        key={recentProduct.id}
+                        product={recentProduct}
+                        onAddToCart={(nextProduct) => addCartItem(nextProduct)}
+                        priority={index === 0}
+                      />
+                    ))}
                 </div>
               </div>
             )}

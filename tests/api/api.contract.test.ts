@@ -8,9 +8,13 @@ import {
   toCartProduct,
   toCoupon,
   toProduct,
+  toProductSuggestion,
   toShippingMethod,
 } from '../../lib/api';
-import { normalizeOrderStatus, normalizePaymentStatus } from '../../stores/orderStore';
+import {
+  normalizeOrderStatus,
+  normalizePaymentStatus,
+} from '../../stores/orderStore';
 
 describe('api transformers and errors', () => {
   it('maps api product to ui product correctly', () => {
@@ -73,6 +77,37 @@ describe('api transformers and errors', () => {
     expect(mapped.price).toBe(250000);
     expect(mapped.categoryId).toBe(3);
     expect(mapped.active).toBe(true);
+  });
+
+  it('maps product suggestions with stable nullable and numeric fields', () => {
+    const productSuggestion = toProductSuggestion({
+      type: 'product',
+      label: 'Bình Gốm',
+      productId: 9,
+      categorySlug: 'gom-su',
+      imageUrl: null,
+      price: '350000.00',
+    });
+    const categorySuggestion = toProductSuggestion({
+      type: 'category',
+      label: 'Gốm Sứ',
+      categorySlug: 'gom-su',
+      price: null,
+    });
+    const fallbackSuggestion = toProductSuggestion({
+      type: 'unknown',
+      label: 'Loose item',
+      price: 120000,
+    });
+
+    expect(productSuggestion.type).toBe('product');
+    expect(productSuggestion.price).toBe(350000);
+    expect(productSuggestion.imageUrl).toBeNull();
+    expect(categorySuggestion.type).toBe('category');
+    expect(categorySuggestion.productId).toBeNull();
+    expect(categorySuggestion.price).toBeNull();
+    expect(fallbackSuggestion.type).toBe('product');
+    expect(fallbackSuggestion.price).toBe(120000);
   });
 
   it('maps admin category response without dropping active state', () => {

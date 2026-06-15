@@ -85,7 +85,7 @@ Mục tiêu batch này là làm chắc đường tiền: `cart -> order -> stock
 ## Batch 1 Remaining Notes
 
 - [x] Fix `district` field drift: migration V7 có `district`, backend entity/API đã map field này.
-- [ ] Dọn encoding mojibake trong UI copy/messages. Đây là quality task riêng vì ảnh hưởng nhiều file text.
+- [x] Dọn encoding mojibake trong UI copy/messages và thêm encoding smoke gate.
 - [ ] Làm CI E2E required check khi Playwright suite ổn định trên GitHub runner.
 
 ## Batch 2 — Storefront Merchandising & Operations
@@ -169,6 +169,7 @@ Acceptance:
 | Coupon/discount | Done | Important |
 | Address book | Done | Important |
 | Product variants/gallery/SKU/brand | Done in Mega Batch | Important tùy ngành hàng |
+| Storefront search/discovery UX | Done | Important |
 | Customer order detail route | Done | Quick win |
 | Server cart + guest/auth merge | Done | Later |
 | Admin dashboard/analytics | Done | Later |

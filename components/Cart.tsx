@@ -73,13 +73,18 @@ export function Cart({
                       alt={item.name}
                       width={80}
                       height={80}
+                      loading="eager"
                       className="w-20 h-20 object-cover rounded"
                     />
 
                     <div className="flex-1">
-                      <h3 className="text-sm text-gray-900 mb-1">{item.name}</h3>
+                      <h3 className="text-sm text-gray-900 mb-1">
+                        {item.name}
+                      </h3>
                       {item.variantName && (
-                        <p className="text-xs text-gray-500 mb-1">{item.variantName}</p>
+                        <p className="text-xs text-gray-500 mb-1">
+                          {item.variantName}
+                        </p>
                       )}
                       <p className="text-amber-900 mb-2">
                         {(() => {
@@ -150,7 +155,7 @@ export function Cart({
                 ₫
               </span>
             </div>
-            <Link 
+            <Link
               href="/checkout"
               onClick={onClose}
               className="w-full bg-amber-900 hover:bg-amber-800 text-white py-3 rounded-lg transition text-center block"

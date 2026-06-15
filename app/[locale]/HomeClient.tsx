@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/Header';
 import { Hero } from '@/components/Hero';
@@ -13,11 +13,29 @@ import { AuthModal } from '@/components/AuthModal';
 import { ProductFilters } from '@/components/ProductFilters';
 import useCartStore from '@/stores/cartStore';
 import { fetchProducts, toProduct } from '@/lib/api';
-import { ChevronLeft, ChevronRight, Leaf, PackageCheck, Palette } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Leaf,
+  PackageCheck,
+  Palette,
+  SearchX,
+} from 'lucide-react';
+import {
+  clearRecentSearches,
+  getRecentSearches,
+  saveRecentSearch,
+} from '@/lib/searchHistory';
 
 const DEFAULT_PAGE_SIZE = 12;
 const PAGE_SIZE_OPTIONS = [12, 24, 48];
-const SORT_OPTIONS = ['newest', 'price-asc', 'price-desc'] as const;
+const SORT_OPTIONS = [
+  'relevance',
+  'newest',
+  'price-asc',
+  'price-desc',
+] as const;
+const SEARCH_URL_DEBOUNCE_MS = 600;
 
 interface CategoryOption {
   label: string;
@@ -56,15 +74,28 @@ function parseMoneyInput(value: string | null) {
   return String(Math.floor(parsed));
 }
 
-function parseSortParam(value: string | null) {
-  if (!value) return 'newest';
-  return SORT_OPTIONS.includes(value as (typeof SORT_OPTIONS)[number]) ? value : 'newest';
+function parseSortParam(value: string | null, hasSearch = false) {
+  if (!value) return hasSearch ? 'relevance' : 'newest';
+  return SORT_OPTIONS.includes(value as (typeof SORT_OPTIONS)[number])
+    ? value
+    : hasSearch
+      ? 'relevance'
+      : 'newest';
 }
 
 function moneyFilter(value: string) {
   if (!value.trim()) return undefined;
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : undefined;
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .normalize('NFD')
+    .replaceAll('đ', 'd')
+    .replaceAll('Đ', 'D')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
 }
 
 function matchesCategory(product: Product, category: string | null) {
@@ -94,11 +125,13 @@ function buildPageButtons(page: number, totalPages: number) {
 export default function HomeClient() {
   const t = useTranslations('home');
   const tSearch = useTranslations('search');
+  const locale = useLocale();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryString = searchParams.toString();
   const queryStringRef = useRef(queryString);
+  const syncedQueryStringRef = useRef(queryString);
 
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -110,9 +143,14 @@ export default function HomeClient() {
     () => searchParams.get('category') || null
   );
   const [sortOrder, setSortOrder] = useState(() =>
-    parseSortParam(searchParams.get('sort'))
+    parseSortParam(
+      searchParams.get('sort'),
+      Boolean(searchParams.get('q')?.trim())
+    )
   );
-  const [page, setPage] = useState(() => parsePageParam(searchParams.get('page')));
+  const [page, setPage] = useState(() =>
+    parsePageParam(searchParams.get('page'))
+  );
   const [pageSize, setPageSize] = useState(() =>
     parsePageSizeParam(searchParams.get('size'))
   );
@@ -133,7 +171,9 @@ export default function HomeClient() {
   const [apiConnected, setApiConnected] = useState(false);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
   const [catalogError, setCatalogError] = useState('');
-  const [pagination, setPagination] = useState<PaginationState>(emptyPagination);
+  const [pagination, setPagination] =
+    useState<PaginationState>(emptyPagination);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
   const {
     items: cartItems,
@@ -147,17 +187,32 @@ export default function HomeClient() {
   }, [queryString]);
 
   useEffect(() => {
-    const nextSearch = searchParams.get('q') || '';
-    const nextCategory = searchParams.get('category') || null;
-    const nextSort = parseSortParam(searchParams.get('sort'));
-    const nextPage = parsePageParam(searchParams.get('page'));
-    const nextSize = parsePageSizeParam(searchParams.get('size'));
-    const nextMinPrice = parseMoneyInput(searchParams.get('minPrice'));
-    const nextMaxPrice = parseMoneyInput(searchParams.get('maxPrice'));
-    const nextInStockOnly = searchParams.get('inStock') === 'true';
-    const nextFeaturedOnly = searchParams.get('featured') === 'true';
+    setRecentSearches(getRecentSearches());
+  }, []);
 
-    setSearchQuery((current) => (current === nextSearch ? current : nextSearch));
+  useEffect(() => {
+    if (queryString === syncedQueryStringRef.current) {
+      return;
+    }
+    syncedQueryStringRef.current = queryString;
+
+    const currentParams = new URLSearchParams(queryString);
+    const nextSearch = currentParams.get('q') || '';
+    const nextCategory = currentParams.get('category') || null;
+    const nextSort = parseSortParam(
+      currentParams.get('sort'),
+      Boolean(nextSearch.trim())
+    );
+    const nextPage = parsePageParam(currentParams.get('page'));
+    const nextSize = parsePageSizeParam(currentParams.get('size'));
+    const nextMinPrice = parseMoneyInput(currentParams.get('minPrice'));
+    const nextMaxPrice = parseMoneyInput(currentParams.get('maxPrice'));
+    const nextInStockOnly = currentParams.get('inStock') === 'true';
+    const nextFeaturedOnly = currentParams.get('featured') === 'true';
+
+    setSearchQuery((current) =>
+      current === nextSearch ? current : nextSearch
+    );
     setDebouncedSearch((current) =>
       current === nextSearch ? current : nextSearch
     );
@@ -179,20 +234,29 @@ export default function HomeClient() {
     setFeaturedOnly((current) =>
       current === nextFeaturedOnly ? current : nextFeaturedOnly
     );
-  }, [searchParams]);
+  }, [queryString]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
       setDebouncedSearch(searchQuery.trim());
-    }, 300);
+    }, SEARCH_URL_DEBOUNCE_MS);
 
     return () => window.clearTimeout(timeout);
   }, [searchQuery]);
 
   useEffect(() => {
+    if (!searchQuery.trim() && sortOrder === 'relevance') {
+      setSortOrder('newest');
+    }
+  }, [searchQuery, sortOrder]);
+
+  useEffect(() => {
     const params = new URLSearchParams(queryStringRef.current);
 
-    const setOrDelete = (key: string, value: string | number | boolean | null) => {
+    const setOrDelete = (
+      key: string,
+      value: string | number | boolean | null
+    ) => {
       if (value === null || value === '' || value === false) {
         params.delete(key);
       } else {
@@ -202,7 +266,8 @@ export default function HomeClient() {
 
     setOrDelete('q', debouncedSearch);
     setOrDelete('category', selectedCategory);
-    setOrDelete('sort', sortOrder === 'newest' ? null : sortOrder);
+    const defaultSortOrder = debouncedSearch ? 'relevance' : 'newest';
+    setOrDelete('sort', sortOrder === defaultSortOrder ? null : sortOrder);
     setOrDelete('page', page > 0 ? page + 1 : null);
     setOrDelete('size', pageSize === DEFAULT_PAGE_SIZE ? null : pageSize);
     setOrDelete('minPrice', minPrice);
@@ -212,9 +277,12 @@ export default function HomeClient() {
 
     const nextQueryString = params.toString();
     if (nextQueryString !== queryStringRef.current) {
-      router.replace(`${pathname}${nextQueryString ? `?${nextQueryString}` : ''}`, {
-        scroll: false,
-      });
+      router.replace(
+        `${pathname}${nextQueryString ? `?${nextQueryString}` : ''}`,
+        {
+          scroll: false,
+        }
+      );
     }
   }, [
     debouncedSearch,
@@ -315,10 +383,14 @@ export default function HomeClient() {
 
   const fallbackFilteredProducts = useMemo(() => {
     let result = handicraftProducts.filter((product) => {
-      const normalizedQuery = debouncedSearch.toLowerCase();
+      const normalizedQuery = normalizeSearchText(debouncedSearch);
       const matchesSearch =
-        product.name.toLowerCase().includes(normalizedQuery) ||
-        product.description.toLowerCase().includes(normalizedQuery);
+        normalizeSearchText(product.name).includes(normalizedQuery) ||
+        normalizeSearchText(product.description).includes(normalizedQuery) ||
+        normalizeSearchText(product.category).includes(normalizedQuery) ||
+        normalizeSearchText(product.categorySlug || '').includes(
+          normalizedQuery
+        );
       const price = Number(product.price);
       const matchesMinPrice =
         minPriceNumber === undefined || price >= minPriceNumber;
@@ -357,7 +429,9 @@ export default function HomeClient() {
     sortOrder,
   ]);
 
-  const fallbackTotalPages = Math.ceil(fallbackFilteredProducts.length / pageSize);
+  const fallbackTotalPages = Math.ceil(
+    fallbackFilteredProducts.length / pageSize
+  );
   const fallbackProducts = useMemo(() => {
     const start = page * pageSize;
     return fallbackFilteredProducts.slice(start, start + pageSize);
@@ -368,7 +442,11 @@ export default function HomeClient() {
     : fallbackTotalPages;
 
   useEffect(() => {
-    if (!isLoadingProducts && activeTotalPages > 0 && page >= activeTotalPages) {
+    if (
+      !isLoadingProducts &&
+      activeTotalPages > 0 &&
+      page >= activeTotalPages
+    ) {
       setPage(activeTotalPages - 1);
     }
   }, [activeTotalPages, isLoadingProducts, page]);
@@ -407,8 +485,39 @@ export default function HomeClient() {
 
   const resetToFirstPage = () => setPage(0);
 
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value);
+    const hasExplicitSort = new URLSearchParams(queryStringRef.current).has(
+      'sort'
+    );
+    if (value.trim() && !hasExplicitSort && sortOrder === 'newest') {
+      setSortOrder('relevance');
+    }
+    if (!value.trim() && sortOrder === 'relevance') {
+      setSortOrder('newest');
+    }
+  };
+
+  const handleSearchSubmit = (query: string) => {
+    const trimmedQuery = query.trim();
+    handleSearchQueryChange(trimmedQuery);
+    setDebouncedSearch(trimmedQuery);
+    setPage(0);
+    if (trimmedQuery) {
+      setRecentSearches(saveRecentSearch(trimmedQuery));
+    }
+  };
+
+  const handleSelectProductSuggestion = (productId: number) => {
+    router.push(`/${locale}/product/${productId}`);
+  };
+
+  const handleClearRecentSearches = () => {
+    setRecentSearches(clearRecentSearches());
+  };
+
   const clearFilters = () => {
-    setSearchQuery('');
+    handleSearchQueryChange('');
     setDebouncedSearch('');
     setSelectedCategory(null);
     setSortOrder('newest');
@@ -440,7 +549,9 @@ export default function HomeClient() {
 
           <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-500">
-              <span>{tSearch('resultCount', { count: activeTotalElements })}</span>
+              <span>
+                {tSearch('resultCount', { count: activeTotalElements })}
+              </span>
               {!apiConnected && !isLoadingProducts && (
                 <>
                   <span className="hidden sm:inline">•</span>
@@ -463,6 +574,9 @@ export default function HomeClient() {
                   backgroundPosition: 'right 16px center',
                 }}
               >
+                {(searchQuery.trim() || sortOrder === 'relevance') && (
+                  <option value="relevance">{tSearch('sortRelevance')}</option>
+                )}
                 <option value="newest">{tSearch('sortNewest')}</option>
                 <option value="price-asc">{tSearch('sortPriceAsc')}</option>
                 <option value="price-desc">{tSearch('sortPriceDesc')}</option>
@@ -505,7 +619,8 @@ export default function HomeClient() {
                 defaultPageSize={DEFAULT_PAGE_SIZE}
                 resultCount={activeTotalElements}
                 showOfflineFallback={!apiConnected && !isLoadingProducts}
-                setSearchQuery={setSearchQuery}
+                recentSearches={recentSearches}
+                setSearchQuery={handleSearchQueryChange}
                 setSelectedCategory={setSelectedCategory}
                 setSortOrder={setSortOrder}
                 setPageSize={setPageSize}
@@ -515,6 +630,9 @@ export default function HomeClient() {
                 setFeaturedOnly={setFeaturedOnly}
                 resetToFirstPage={resetToFirstPage}
                 clearFilters={clearFilters}
+                onSearchSubmit={handleSearchSubmit}
+                onSelectProductSuggestion={handleSelectProductSuggestion}
+                onClearRecentSearches={handleClearRecentSearches}
               />
             </div>
 
@@ -528,7 +646,10 @@ export default function HomeClient() {
               {isLoadingProducts && displayedProducts.length === 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
                   {Array.from({ length: 8 }).map((_, index) => (
-                    <div key={index} className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse">
+                    <div
+                      key={index}
+                      className="bg-white rounded-lg shadow-sm overflow-hidden animate-pulse"
+                    >
                       <div className="h-64 bg-gray-200" />
                       <div className="p-6 space-y-4">
                         <div className="h-5 bg-gray-200 rounded" />
@@ -541,20 +662,30 @@ export default function HomeClient() {
               ) : displayedProducts.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {displayedProducts.map((product) => (
-                      <ProductCard key={product.id} product={product} onAddToCart={addToCart} />
+                    {displayedProducts.map((product, index) => (
+                      <ProductCard
+                        key={product.id}
+                        product={product}
+                        onAddToCart={addToCart}
+                        priority={index === 0}
+                      />
                     ))}
                   </div>
 
                   {activeTotalPages > 1 && (
                     <div className="mt-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                       <p className="text-sm text-gray-500">
-                        {tSearch('pageOf', { page: page + 1, totalPages: activeTotalPages })}
+                        {tSearch('pageOf', {
+                          page: page + 1,
+                          totalPages: activeTotalPages,
+                        })}
                       </p>
                       <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => setPage((current) => Math.max(0, current - 1))}
+                          onClick={() =>
+                            setPage((current) => Math.max(0, current - 1))
+                          }
                           disabled={page === 0}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                           aria-label={tSearch('previous')}
@@ -577,7 +708,11 @@ export default function HomeClient() {
                         ))}
                         <button
                           type="button"
-                          onClick={() => setPage((current) => Math.min(activeTotalPages - 1, current + 1))}
+                          onClick={() =>
+                            setPage((current) =>
+                              Math.min(activeTotalPages - 1, current + 1)
+                            )
+                          }
                           disabled={page >= activeTotalPages - 1}
                           className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
                           aria-label={tSearch('next')}
@@ -589,8 +724,52 @@ export default function HomeClient() {
                   )}
                 </>
               ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border border-gray-100">
-                  <p className="text-xl text-gray-500">{tSearch('noResults')}</p>
+                <div className="rounded-2xl border border-gray-100 bg-white px-6 py-14 text-center">
+                  <SearchX className="mx-auto mb-4 h-12 w-12 text-gray-300" />
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {tSearch('noResultsTitle')}
+                  </h3>
+                  <p className="mx-auto mt-2 max-w-xl text-sm text-gray-500">
+                    {tSearch('noResultsBody')}
+                  </p>
+                  <div className="mt-6 flex flex-wrap justify-center gap-2">
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="rounded-lg bg-amber-900 px-4 py-2 text-sm font-medium text-white hover:bg-amber-800"
+                    >
+                      {tSearch('clearFilters')}
+                    </button>
+                    {recentSearches.map((query) => (
+                      <button
+                        key={query}
+                        type="button"
+                        onClick={() => handleSearchSubmit(query)}
+                        className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        {query}
+                      </button>
+                    ))}
+                  </div>
+                  {categories.length > 0 && (
+                    <div className="mt-5 flex flex-wrap justify-center gap-2">
+                      {categories.slice(0, 5).map((category) => (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => {
+                            handleSearchQueryChange('');
+                            setDebouncedSearch('');
+                            setSelectedCategory(category.value);
+                            resetToFirstPage();
+                          }}
+                          className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-950 hover:bg-amber-100"
+                        >
+                          {category.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
